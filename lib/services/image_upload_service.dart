@@ -1,9 +1,15 @@
-import 'dart:async';
-import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:path/path.dart' as p;
 
-/// Service for handling image uploads and asset management
+/// Service for handling real image uploads to Firebase Storage for $0 cost
 class ImageUploadService {
   static final ImageUploadService _instance = ImageUploadService._internal();
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   factory ImageUploadService() {
     return _instance;
@@ -11,57 +17,61 @@ class ImageUploadService {
 
   ImageUploadService._internal();
 
-  /// Upload image and return the URL
-  /// In a real app, this would upload to a server and return a URL
-  Future<String> uploadImage(String imagePath) async {
+  /// Compress image before upload to save storage costs
+  Future<File?> _compressImage(String path) async {
+    final tempDir = await path_provider.getTemporaryDirectory();
+    final targetPath = p.join(tempDir.path, "${DateTime.now().millisecondsSinceEpoch}.jpg");
+
+    final XFile? result = await FlutterImageCompress.compressAndGetFile(
+      path,
+      targetPath,
+      quality: 70, // High quality, low size
+      format: CompressFormat.jpeg,
+    );
+
+    return result != null ? File(result.path) : null;
+  }
+
+  /// Upload image to Firebase Storage and return the public URL
+  Future<String> uploadImage(String imagePath, String folder) async {
     try {
-      // Simulate upload delay
-      await Future.delayed(const Duration(seconds: 2));
+      if (imagePath.startsWith('http')) return imagePath;
+
+      // 1. Compress locally
+      File? compressedFile = await _compressImage(imagePath);
+      final File fileToUpload = compressedFile ?? File(imagePath);
+
+      // 2. Prepare reference
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final Reference ref = _storage.ref().child(folder).child(fileName);
+
+      // 3. Start upload
+      final UploadTask uploadTask = ref.putFile(
+        fileToUpload,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      final TaskSnapshot snapshot = await uploadTask;
       
-      // In a real implementation, you would:
-      // 1. Read the image file
-      // 2. Create a multipart request
-      // 3. Send to your backend server
-      // 4. Return the uploaded image URL
-      
-      // For now, return a mock URL based on the path
-      return 'https://api.example.com/images/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      // 4. Cleanup temporary compressed file
+      if (compressedFile != null && await compressedFile.exists()) {
+        await compressedFile.delete();
+      }
+
+      return await snapshot.ref.getDownloadURL();
     } catch (e) {
+      debugPrint('Firebase Storage Error: $e');
       throw Exception('Failed to upload image: $e');
     }
   }
 
-  /// Upload multiple images
-  Future<List<String>> uploadMultipleImages(List<String> imagePaths) async {
+  /// Delete image from Firebase Storage
+  Future<void> deleteImage(String imageUrl) async {
     try {
-      final uploadFutures = imagePaths.map((path) => uploadImage(path)).toList();
-      return await Future.wait(uploadFutures);
+      final Reference ref = _storage.refFromURL(imageUrl);
+      await ref.delete();
     } catch (e) {
-      throw Exception('Failed to upload multiple images: $e');
-    }
-  }
-
-  /// Delete image from server
-  Future<bool> deleteImage(String imageUrl) async {
-    try {
-      // Simulate deletion delay
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      // In a real implementation, you would:
-      // 1. Send a DELETE request to your backend
-      // 2. Return success/failure
-      
-      return true;
-    } catch (e) {
-      throw Exception('Failed to delete image: $e');
-    }
-  }
-
-  /// Get image upload progress
-  Stream<double> getUploadProgress(String imagePath) async* {
-    for (int i = 0; i <= 100; i += 10) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      yield i / 100;
+      debugPrint('Firebase Storage Delete Error: $e');
     }
   }
 }

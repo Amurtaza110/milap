@@ -44,7 +44,7 @@ class _StatusUploadScreenState extends State<StatusUploadScreen> {
 
     setState(() => _isUploading = true);
 
-    ImageUploadService().uploadImage(_selectedFile!).then((url) {
+    ImageUploadService().uploadImage(_selectedFile!, 'statuses').then((url) {
       widget.onUpload(url, _captionController.text, _fileType);
     }).catchError((e) {
       ScaffoldMessenger.of(context).showSnackBar(

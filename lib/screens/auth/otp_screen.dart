@@ -5,6 +5,7 @@ import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_button_styles.dart';
+import '../../services/auth_service.dart';
 
 class OTPScreen extends StatefulWidget {
   final String phoneNumber;
@@ -24,8 +25,8 @@ class OTPScreen extends StatefulWidget {
 
 class _OTPScreenState extends State<OTPScreen> {
   final List<TextEditingController> _controllers =
-      List.generate(4, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
+      List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   int _timerValue = 30;
   Timer? _timer;
 
@@ -61,24 +62,37 @@ class _OTPScreenState extends State<OTPScreen> {
     if (value.length > 1) {
       _controllers[index].text = value.substring(value.length - 1);
     }
-    if (value.isNotEmpty && index < 3) {
+    if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
+    }
+    // Automatically verify when last digit is entered
+    if (value.isNotEmpty && index == 5) {
+      _handleVerify();
     }
   }
 
   Future<void> _handleVerify() async {
     final otp = _controllers.map((c) => c.text).join();
-    if (otp.length < 4) return;
+    if (otp.length < 6) return;
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final success = await userProvider.verifyOTP(otp);
+    
+    try {
+      final AuthResult result = await userProvider.verifyOTP(otp);
 
-    if (success) {
-      widget.onVerify(true);
-    } else {
+      if (result.user != null) {
+        widget.onVerify(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Verification failed. Please try again.'),
+              backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Invalid OTP. Please try again.'),
+        SnackBar(
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.redAccent),
       );
     }
@@ -123,7 +137,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 style: AppTextStyles.body.copyWith(
                     fontSize: 16, color: AppColors.textLight, height: 1.5),
                 children: [
-                  const TextSpan(text: 'Enter the 4-digit code sent to \n'),
+                  const TextSpan(text: 'Enter the 6-digit code sent to \n'),
                   TextSpan(
                     text: '+92 ${widget.phoneNumber}',
                     style: AppTextStyles.h4.copyWith(color: AppColors.primary),
@@ -134,9 +148,9 @@ class _OTPScreenState extends State<OTPScreen> {
             const SizedBox(height: 48),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(4, (index) {
+              children: List.generate(6, (index) {
                 return SizedBox(
-                  width: (MediaQuery.of(context).size.width - 64 - 48) / 4,
+                  width: (MediaQuery.of(context).size.width - 64 - 40) / 6,
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: TextField(
@@ -146,20 +160,20 @@ class _OTPScreenState extends State<OTPScreen> {
                       textAlign: TextAlign.center,
                       maxLength: 1,
                       onChanged: (v) => _onOtpChanged(index, v),
-                      style: AppTextStyles.h1
-                          .copyWith(fontSize: 32, color: AppColors.textMain),
+                      style: AppTextStyles.h2
+                          .copyWith(fontSize: 24, color: AppColors.textMain),
                       decoration: InputDecoration(
                         counterText: '',
                         filled: true,
                         fillColor: AppColors.background,
                         contentPadding: EdgeInsets.zero,
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(16),
                           borderSide:
                               BorderSide(color: AppColors.background, width: 2),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(16),
                           borderSide:
                               BorderSide(color: AppColors.primary, width: 2),
                         ),

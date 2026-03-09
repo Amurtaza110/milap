@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
-import '../../models/user_profile.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_icons.dart';
-import '../../theme/app_text_styles.dart';
+import 'package:provider/provider.dart';
+import 'package:milap/models/chat.dart';
+import 'package:milap/models/user_profile.dart';
+import 'package:milap/providers/user_provider.dart';
+import 'package:milap/services/chat_service.dart';
+import 'package:milap/theme/app_colors.dart';
+import 'package:milap/theme/app_icons.dart';
+import 'package:milap/theme/app_text_styles.dart';
 
 class ChatScreen extends StatefulWidget {
   final UserProfile? peer;
   final String? roomId;
+  final Chat? chat;
 
-  const ChatScreen({Key? key, this.peer, this.roomId}) : super(key: key);
+  const ChatScreen({Key? key, this.peer, this.roomId, this.chat}) : super(key: key);
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -16,9 +21,11 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
+  final ChatService _chatService = ChatService();
   bool _isComposing = false;
 
-  bool get isRoomChat => widget.roomId != null;
+  String get roomId => widget.roomId ?? widget.chat?.id ?? '';
+  UserProfile? get peer => widget.peer ?? (widget.chat?.participants.isNotEmpty == true ? widget.chat!.participants[0] : null);
 
   @override
   void initState() {
@@ -27,6 +34,14 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _isComposing = _messageController.text.trim().isNotEmpty;
       });
+    });
+
+    // Mark messages as read when entering the chat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.user != null) {
+        _chatService.markMessagesAsRead(roomId, userProvider.user!.id);
+      }
     });
   }
 
@@ -38,22 +53,49 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final currentUser = userProvider.user;
+
+    if (currentUser == null || peer == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: _buildAppBar(),
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: 20, // Mock message count
-              itemBuilder: (context, index) {
-                final isMe = index % 4 == 0;
-                return _buildMessageBubble(isMe, 'Message content at $index');
+            child: StreamBuilder<List<Message>>(
+              stream: _chatService.streamMessages(roomId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final messages = snapshot.data ?? [];
+
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Text('Start a conversation with ${peer!.name}',
+                        style: const TextStyle(color: Colors.white54)),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  reverse: true,
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    final isMe = msg.senderId == currentUser.id;
+                    return _buildMessageBubble(isMe, msg.text);
+                  },
+                );
               },
             ),
           ),
-          _buildMessageComposer(),
+          _buildMessageComposer(currentUser.id),
         ],
       ),
     );
@@ -68,57 +110,24 @@ class _ChatScreenState extends State<ChatScreen> {
         icon: const Icon(AppIcons.back, color: Colors.white),
       ),
       titleSpacing: 0,
-      title: isRoomChat
-          ? Row(
-              children: [
-                const CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.primary,
-                  child: Icon(Icons.people, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Room Name', style: AppTextStyles.h4),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text('LIVE', style: AppTextStyles.label),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundImage: NetworkImage(widget.peer!.photos[0]),
-                ),
-                const SizedBox(width: 12),
-                Text(widget.peer!.name, style: AppTextStyles.h4),
-              ],
-            ),
+      title: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundImage: NetworkImage(peer!.photos.isNotEmpty ? peer!.photos[0] : 'https://i.pravatar.cc/150'),
+          ),
+          const SizedBox(width: 12),
+          Text(peer!.name, style: AppTextStyles.h4),
+        ],
+      ),
       actions: [
         IconButton(
           onPressed: () => _showCallFeedback('Video Call'),
           icon: const Icon(Icons.videocam_rounded, color: AppColors.primary),
-          tooltip: 'Video Call',
         ),
         IconButton(
           onPressed: () => _showCallFeedback('Voice Call'),
           icon: const Icon(Icons.call_rounded, color: AppColors.primary),
-          tooltip: 'Voice Call',
         ),
         IconButton(
           onPressed: () {},
@@ -144,6 +153,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
         decoration: BoxDecoration(
           color: isMe ? AppColors.primary : const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(20),
@@ -153,14 +163,14 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageComposer() {
+  Widget _buildMessageComposer(String currentUserId) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       color: const Color(0xFF101010),
       child: Row(
         children: [
           IconButton(
-            onPressed: _showMediaSelection,
+            onPressed: () {}, // Media upload logic
             icon: const Icon(Icons.add_circle_outline_rounded,
                 color: AppColors.primary),
           ),
@@ -183,11 +193,11 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(width: 8),
           GestureDetector(
-            onTap: _isComposing ? _handleSendMessage : _handleVoiceChat,
+            onTap: _isComposing ? () => _handleSendMessage(currentUserId) : null,
             child: Container(
               padding: const EdgeInsets.all(10),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              decoration: BoxDecoration(
+                color: _isComposing ? AppColors.primary : AppColors.textExtraLight,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -203,117 +213,20 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void _handleSendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
-    // Sending logic here
+  void _handleSendMessage(String currentUserId) {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+
+    final message = Message(
+      id: '', // Will be set by service
+      senderId: currentUserId,
+      text: text,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      isEncrypted: true,
+      readStatus: MessageReadStatus.sent,
+    );
+
+    _chatService.sendMessage(roomId, message);
     _messageController.clear();
-  }
-
-  void _handleVoiceChat() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Hold to record voice message...'),
-        backgroundColor: Colors.blueGrey,
-        duration: Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void _showMediaSelection() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMediaOption(
-                    Icons.image_rounded, 'Gallery', Colors.purple),
-                _buildMediaOption(
-                    Icons.camera_alt_rounded, 'Camera', Colors.red),
-                _buildMediaOption(
-                    Icons.description_rounded, 'Document', Colors.blue),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMediaOption(
-                    Icons.headset_rounded, 'Audio', Colors.orange),
-                _buildMediaOption(
-                    Icons.location_on_rounded, 'Location', Colors.green),
-                _buildMediaOption(Icons.person_rounded, 'Contact', Colors.teal),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMediaOption(IconData icon, String label, Color color) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context);
-        _handleMediaUpload(label);
-      },
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
-  void _handleMediaUpload(String type) {
-    // Mocking a file size check
-    // In real app, you'd get the file length first
-    const mockFileSizeMB = 55; // Example exceeding limit
-    const limitMB = 50;
-
-    if (mockFileSizeMB > limitMB) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1A1A),
-          title: const Text('File too large',
-              style: TextStyle(color: Colors.white)),
-          content: Text(
-            'The selected $type is $mockFileSizeMB MB, which exceeds the $limitMB MB limit.',
-            style: const TextStyle(color: Colors.white70),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child:
-                  const Text('OK', style: TextStyle(color: AppColors.primary)),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // Proceed with upload
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Uploading $type...')),
-      );
-    }
   }
 }

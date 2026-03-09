@@ -5,7 +5,7 @@ import '../../models/status.dart';
 import '../../models/app_screen.dart';
 import '../../providers/user_provider.dart';
 import '../../services/user_service.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/status_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../widgets/dashboard_header.dart';
@@ -13,6 +13,7 @@ import '../../widgets/status_story_rail.dart';
 import '../../widgets/status_viewer.dart';
 import '../../widgets/swipe_card.dart';
 import '../profile/public_profile_view.dart';
+import 'dart:async';
 
 class Dashboard extends StatefulWidget {
   final Function(AppScreen) onNavigate;
@@ -28,61 +29,87 @@ class _DashboardState extends State<Dashboard> {
   int _currentIndex = 0;
   List<UserProfile> _profiles = [];
   List<Status> _statuses = [];
+  bool _isInitialLoading = true;
+  StreamSubscription? _statusSubscription;
 
   final UserService _userService = UserService();
+  final StatusService _statusService = StatusService();
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadInitialData();
+    _subscribeToStatuses();
   }
 
-  Future<void> _loadData() async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final user = userProvider.user;
+  @override
+  void dispose() {
+    _statusSubscription?.cancel();
+    super.dispose();
+  }
 
-    if (user != null) {
-      // Fetch statuses (still using mock for now until StatusService is built,
-      // but filtering by fresh timestamps)
-      final now = DateTime.now().millisecondsSinceEpoch;
-      final freshStatuses = MockDataService.mockStatuses
-          .where((s) => now - s.timestamp <= 24 * 60 * 60 * 1000)
-          .toList();
-
-      // Fetch real profiles from Firestore
-      final profiles = await _userService.getSocialFeed();
-
+  void _subscribeToStatuses() {
+    _statusSubscription = _statusService.streamFreshStatuses().listen((freshStatuses) {
       if (mounted) {
         setState(() {
-          _profiles = profiles
-              .where((p) =>
-                  p.id != user.id &&
-                  !p.isDeactivated &&
-                  !(user.blockedUserIds ?? []).contains(p.id))
-              .toList();
           _statuses = freshStatuses;
         });
       }
+    });
+  }
+
+  Future<void> _loadInitialData() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    // If user is already loaded, fetch profiles immediately
+    if (userProvider.user != null) {
+      await _fetchProfiles(userProvider.user!);
+    } else {
+      // Otherwise, wait for the first valid user emission
+      late VoidCallback listener;
+      listener = () {
+        if (userProvider.user != null) {
+          _fetchProfiles(userProvider.user!);
+          userProvider.removeListener(listener);
+        }
+      };
+      userProvider.addListener(listener);
     }
   }
 
-  void _handleAction(String action) {
+  Future<void> _fetchProfiles(UserProfile user) async {
+    final profiles = await _userService.getSocialFeed(
+      preferredCity: user.location,
+      excludeUid: user.id,
+    );
+
+    if (mounted) {
+      setState(() {
+        _profiles = profiles
+            .where((p) => !(user.blockedUserIds ?? []).contains(p.id))
+            .toList();
+        _isInitialLoading = false;
+      });
+    }
+  }
+
+  void _handleAction(String action) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final user = userProvider.user;
 
-    if (user == null) return;
+    if (user == null || _currentIndex >= _profiles.length) return;
 
-    if (user.isMilapGold) {
-      setState(() => _currentIndex++);
-    } else {
-      if (user.heartsBalance > 0) {
-        userProvider
-            .updateUser(user.copyWith(heartsBalance: user.heartsBalance - 1));
-        setState(() => _currentIndex++);
-      } else {
+    final targetProfile = _profiles[_currentIndex];
+
+    if (action == 'match') {
+      final success = await userProvider.sendMatchRequest(targetProfile);
+      if (!success && !user.isMilapGold && user.heartsBalance <= 0) {
         _showOutofHeartsDialog();
+        return;
       }
     }
+
+    setState(() => _currentIndex++);
   }
 
   void _showOutofHeartsDialog() {
@@ -109,7 +136,6 @@ class _DashboardState extends State<Dashboard> {
   }
 
   void _navigateToPublicProfile(UserProfile profile) {
-    // Pass the profile through widget callback which will set _viewingProfile in root_screen
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PublicProfileView(
@@ -117,6 +143,7 @@ class _DashboardState extends State<Dashboard> {
           onBack: () => Navigator.pop(context),
           onConnect: () {
             Navigator.pop(context);
+            _handleAction('match');
           },
           onUpgrade: () {
             Navigator.pop(context);
@@ -132,12 +159,19 @@ class _DashboardState extends State<Dashboard> {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
 
-    if (user == null) return const Center(child: CircularProgressIndicator());
+    if (user == null || _isInitialLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     final currentProfile =
         _currentIndex < _profiles.length ? _profiles[_currentIndex] : null;
+    
     Status? currentProfileStatus;
     bool hasVisibleStatus = false;
+    
     if (currentProfile != null) {
       try {
         currentProfileStatus =
@@ -185,50 +219,50 @@ class _DashboardState extends State<Dashboard> {
                     widget.onNavigate(AppScreen.SENT_REQUESTS),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 100),
-                  child: Column(
-                    children: [
-                      // Status Rail
-                      Container(
-                        color: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: StatusStoryRail(
-                          user: user,
-                          statuses: _statuses,
-                          onOpenStatus: (s) =>
-                              setState(() => _viewingStatus = s),
-                          onAddStatus: () =>
-                              widget.onNavigate(AppScreen.STATUS_UPLOAD),
+                child: RefreshIndicator(
+                  onRefresh: () => _fetchProfiles(user),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 100),
+                    child: Column(
+                      children: [
+                        Container(
+                          color: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: StatusStoryRail(
+                            user: user,
+                            statuses: _statuses,
+                            onOpenStatus: (s) =>
+                                setState(() => _viewingStatus = s),
+                            onAddStatus: () =>
+                                widget.onNavigate(AppScreen.STATUS_UPLOAD),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Card Stack
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: SwipeCard(
-                          profile: currentProfile,
-                          onAction: _handleAction,
-                          onViewProfile: (p) {
-                            _navigateToPublicProfile(p);
-                          },
-                          onBlockUser: (id) {
-                            userProvider.updateUser(user.copyWith(
-                                blockedUserIds: [
-                                  ...(user.blockedUserIds ?? []),
-                                  id
-                                ]));
-                            _loadData();
-                          },
-                          hasStatus:
-                              currentProfileStatus != null && hasVisibleStatus,
-                          onShowStatus: () => setState(
-                              () => _viewingStatus = currentProfileStatus),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: SwipeCard(
+                            profile: currentProfile,
+                            onAction: _handleAction,
+                            onViewProfile: (p) {
+                              _navigateToPublicProfile(p);
+                            },
+                            onBlockUser: (id) {
+                              userProvider.updateUser(user.copyWith(
+                                  blockedUserIds: [
+                                    ...(user.blockedUserIds ?? []),
+                                    id
+                                  ]));
+                              _fetchProfiles(user);
+                            },
+                            hasStatus:
+                                currentProfileStatus != null && hasVisibleStatus,
+                            onShowStatus: () => setState(
+                                () => _viewingStatus = currentProfileStatus),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -240,10 +274,8 @@ class _DashboardState extends State<Dashboard> {
               onClose: () => setState(() => _viewingStatus = null),
               isOwner: _viewingStatus!.userId == user.id,
               onDelete: (id) {
-                setState(() {
-                  _statuses.removeWhere((s) => s.id == id);
-                  _viewingStatus = null;
-                });
+                _statusService.deleteStatus(id);
+                setState(() => _viewingStatus = null);
               },
             ),
         ],

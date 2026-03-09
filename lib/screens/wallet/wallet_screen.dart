@@ -452,8 +452,6 @@ class _WalletScreenState extends State<WalletScreen> {
               _shareController.clear();
 
               final sharingService = VaultSharingService();
-              final shareId =
-                  '${asset.id}_${DateTime.now().millisecondsSinceEpoch}';
 
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Sharing asset...')),
@@ -461,24 +459,13 @@ class _WalletScreenState extends State<WalletScreen> {
 
               try {
                 final success = await sharingService.shareVaultAsset(
-                  asset.id,
-                  recipientId,
-                  widget.user.id,
+                  assetId: asset.id,
+                  recipientId: recipientId,
+                  senderId: widget.user.id,
+                  senderName: widget.user.name,
                 );
 
                 if (success) {
-                  sharingService.enableScreenshotProtection(
-                    shareId,
-                    (warning) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              'Screenshot attempt detected for shared vault item. Warnings: ${warning.warningCount}/5'),
-                        ),
-                      );
-                    },
-                  );
-
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

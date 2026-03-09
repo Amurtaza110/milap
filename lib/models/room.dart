@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum RoomCategory {
   Dating,
   Friendship,
@@ -45,6 +47,46 @@ class Room {
     this.coverImage,
     this.isActive = true,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'category': category.name,
+      'hostId': hostId,
+      'hostName': hostName,
+      'hostAvatar': hostAvatar,
+      'participants': participants.map((x) => x.toMap()).toList(),
+      'maxParticipants': maxParticipants,
+      'isPublic': isPublic,
+      'pinCode': pinCode,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'messageCount': messageCount,
+      'coverImage': coverImage,
+      'isActive': isActive,
+    };
+  }
+
+  factory Room.fromMap(Map<String, dynamic> map) {
+    return Room(
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
+      description: map['description'] ?? '',
+      category: RoomCategory.values.firstWhere((e) => e.name == map['category'], orElse: () => RoomCategory.General),
+      hostId: map['hostId'] ?? '',
+      hostName: map['hostName'] ?? '',
+      hostAvatar: map['hostAvatar'] ?? '',
+      participants: List<RoomParticipant>.from(map['participants']?.map((x) => RoomParticipant.fromMap(x)) ?? []),
+      maxParticipants: map['maxParticipants'] ?? 0,
+      isPublic: map['isPublic'] ?? true,
+      pinCode: map['pinCode'],
+      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      messageCount: map['messageCount'] ?? 0,
+      coverImage: map['coverImage'],
+      isActive: map['isActive'] ?? true,
+    );
+  }
 
   Room copyWith({
     String? id,
@@ -104,6 +146,28 @@ class RoomParticipant {
     this.isMuted = false,
   });
 
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'name': name,
+      'avatar': avatar,
+      'joinedAt': Timestamp.fromDate(joinedAt),
+      'isModerator': isModerator,
+      'isMuted': isMuted,
+    };
+  }
+
+  factory RoomParticipant.fromMap(Map<String, dynamic> map) {
+    return RoomParticipant(
+      userId: map['userId'] ?? '',
+      name: map['name'] ?? '',
+      avatar: map['avatar'] ?? '',
+      joinedAt: (map['joinedAt'] as Timestamp).toDate(),
+      isModerator: map['isModerator'] ?? false,
+      isMuted: map['isMuted'] ?? false,
+    );
+  }
+
   RoomParticipant copyWith({
     String? userId,
     String? name,
@@ -143,4 +207,30 @@ class RoomMessage {
     required this.timestamp,
     this.type = MessageType.Text,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'roomId': roomId,
+      'senderId': senderId,
+      'senderName': senderName,
+      'senderAvatar': senderAvatar,
+      'message': message,
+      'timestamp': Timestamp.fromDate(timestamp),
+      'type': type.name,
+    };
+  }
+
+  factory RoomMessage.fromMap(Map<String, dynamic> map) {
+    return RoomMessage(
+      id: map['id'] ?? '',
+      roomId: map['roomId'] ?? '',
+      senderId: map['senderId'] ?? '',
+      senderName: map['senderName'] ?? '',
+      senderAvatar: map['senderAvatar'] ?? '',
+      message: map['message'] ?? '',
+      timestamp: (map['timestamp'] as Timestamp).toDate(),
+      type: MessageType.values.firstWhere((e) => e.name == map['type'], orElse: () => MessageType.Text),
+    );
+  }
 }

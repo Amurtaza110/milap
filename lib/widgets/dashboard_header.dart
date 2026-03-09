@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/user_profile.dart';
-import '../theme/app_theme.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import '../theme/app_icons.dart';
 
 class DashboardHeader extends StatelessWidget {
   final UserProfile user;
@@ -23,126 +21,97 @@ class DashboardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 48, 20, 20),
+      padding: const EdgeInsets.fromLTRB(24, 64, 24, 20),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Top Row: Logo and Action Buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Logo
-              Text(
-                'Milap',
-                style: AppTextStyles.h3.copyWith(
-                  color: AppColors.primary,
-                  letterSpacing: -1.0,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                ),
+              // Premium Logo Design
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Milap',
+                    style: AppTextStyles.h3.copyWith(
+                      color: AppColors.textMain,
+                      letterSpacing: -1.5,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Container(
+                    height: 3,
+                    width: 24,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ],
               ),
-              // Action Buttons
+
               Row(
                 children: [
-                  // Sent Requests Button
-                  _IconButton(
-                    onPressed: onOpenSentRequests,
-                    icon: AppIcons.send,
-                    title: 'Sent Requests',
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Heart Counter
+                  // Economy Widget
                   GestureDetector(
                     onTap: onOpenStore,
                     child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.primaryLight, Color(0xFFFFE8F5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.primary, width: 1.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        color: AppColors.primary.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.favorite,
-                            color: AppColors.primary,
-                            size: 18,
-                          ),
+                          const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 16),
                           const SizedBox(width: 6),
                           Text(
                             user.isMilapGold ? '∞' : '${user.heartsBalance}',
-                            style: AppTextStyles.base.copyWith(
-                              fontSize: 13,
+                            style: const TextStyle(
+                              fontSize: 14,
                               fontWeight: FontWeight.w900,
-                              color: AppColors.primary,
+                              color: AppColors.textMain,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
 
-                  // Notifications
-                  Stack(
-                    children: [
-                      _IconButton(
-                        onPressed: onOpenNotifications,
-                        icon: AppIcons.notifications,
-                      ),
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.4),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                  // Notifications with Badge
+                  _HeaderActionBtn(
+                    icon: Icons.notifications_none_rounded,
+                    onTap: onOpenNotifications,
+                    hasBadge: true,
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Sent Requests
+                  _HeaderActionBtn(
+                    icon: Icons.send_rounded,
+                    onTap: onOpenSentRequests,
                   ),
                 ],
               ),
             ],
-          ),
-          // Divider
-          Container(
-            margin: const EdgeInsets.only(top: 16),
-            height: 1,
-            color: AppColors.background.withOpacity(0.5),
           ),
         ],
       ),
@@ -150,37 +119,46 @@ class DashboardHeader extends StatelessWidget {
   }
 }
 
-class _IconButton extends StatelessWidget {
-  final VoidCallback? onPressed;
+class _HeaderActionBtn extends StatelessWidget {
   final IconData icon;
-  final String? title;
+  final VoidCallback? onTap;
+  final bool hasBadge;
 
-  const _IconButton({
-    Key? key,
-    this.onPressed,
+  const _HeaderActionBtn({
     required this.icon,
-    this.title,
-  }) : super(key: key);
+    this.onTap,
+    this.hasBadge = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          shape: BoxShape.circle,
-        ),
-        child: Center(
-          child: Icon(
-            icon,
-            size: 20,
-            color: AppColors.textMain,
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.textMain, size: 22),
           ),
-        ),
+          if (hasBadge)
+            Positioned(
+              top: 2,
+              right: 2,
+              child: Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

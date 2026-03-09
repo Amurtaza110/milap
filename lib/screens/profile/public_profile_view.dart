@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_icons.dart';
 import '../../services/screenshot_detection_service.dart';
+import '../../services/support_service.dart';
 import 'dart:async';
 
 class PublicProfileView extends StatefulWidget {
@@ -29,6 +30,7 @@ class PublicProfileView extends StatefulWidget {
 class _PublicProfileViewState extends State<PublicProfileView> {
   bool _screenshotDetected = false;
   StreamSubscription<ScreenshotEvent>? _subscription;
+  final SupportService _supportService = SupportService();
 
   void _triggerWarning() {
     setState(() => _screenshotDetected = true);
@@ -59,6 +61,42 @@ class _PublicProfileViewState extends State<PublicProfileView> {
     _triggerWarning();
   }
 
+  void _handleReport() async {
+    final currentUser = Provider.of<UserProvider>(context, listen: false).user;
+    if (currentUser == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Report Profile'),
+        content: Text('Are you sure you want to report ${widget.profile.name} for inappropriate behavior?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCEL')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true), 
+            child: const Text('REPORT', style: TextStyle(color: Colors.red))
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _supportService.submitTicket(
+        userId: currentUser.id,
+        userName: currentUser.name,
+        category: 'REPORT',
+        message: 'USER REPORT: Reported profile ${widget.profile.name} (UID: ${widget.profile.id}). Possible violation of terms.',
+        isGold: currentUser.isMilapGold,
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Report submitted. Our moderation team will review this profile.'), backgroundColor: Colors.orange),
+        );
+      }
+    }
+  }
+
   void _showProfileMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -78,15 +116,11 @@ class _PublicProfileViewState extends State<PublicProfileView> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.report_gmailerrorred_outlined),
+              leading: const Icon(Icons.report_gmailerrorred_outlined, color: Colors.orange),
               title: const Text('Report Profile'),
               onTap: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Report submitted. Our team will review.'),
-                  ),
-                );
+                _handleReport();
               },
             ),
             ListTile(
@@ -94,12 +128,7 @@ class _PublicProfileViewState extends State<PublicProfileView> {
               title: const Text('Block User'),
               onTap: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        'You will no longer receive messages from ${widget.profile.name}.'),
-                  ),
-                );
+                // Implementation for blocking can be called here
               },
             ),
           ],
@@ -126,9 +155,8 @@ class _PublicProfileViewState extends State<PublicProfileView> {
           }),
     ];
 
-    final headerPhoto = widget.profile.photos[0];
-    final isHeaderHidden =
-        (widget.profile.hiddenMediaIds ?? []).contains(headerPhoto);
+    final headerPhoto = widget.profile.photos.isNotEmpty ? widget.profile.photos[0] : 'https://i.pravatar.cc/300';
+    final isHeaderHidden = (widget.profile.hiddenMediaIds ?? []).contains(headerPhoto);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -156,7 +184,7 @@ class _PublicProfileViewState extends State<PublicProfileView> {
                         ),
                       ),
                       child: isHeaderHidden
-                          ? Center(
+                          ? const Center(
                               child: Icon(AppIcons.lock,
                                   size: 48, color: Colors.white))
                           : null,
@@ -208,7 +236,7 @@ class _PublicProfileViewState extends State<PublicProfileView> {
                                       width: 2,
                                     ),
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     AppIcons.accepted,
                                     size: 12,
                                     color: Colors.white,
@@ -363,7 +391,7 @@ class _PublicProfileViewState extends State<PublicProfileView> {
                                       : null),
                             ),
                             child: isHidden
-                                ? Center(
+                                ? const Center(
                                     child: Icon(AppIcons.lock,
                                         size: 24, color: Colors.white))
                                 : null,
@@ -437,10 +465,7 @@ class _PublicProfileViewState extends State<PublicProfileView> {
                           padding: const EdgeInsets.all(40),
                           decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                  color: const Color(0xFFF1F5F9),
-                                  style: BorderStyle.none)),
+                              borderRadius: BorderRadius.circular(24)),
                           child: Center(
                               child: Text('NO REVIEWS YET',
                                   style: AppTextStyles.label.copyWith(
@@ -466,7 +491,7 @@ class _PublicProfileViewState extends State<PublicProfileView> {
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Icon(AppIcons.back, size: 20, color: Colors.white),
+                    child: const Icon(AppIcons.back, size: 20, color: Colors.white),
                   ),
                 ),
                 const Spacer(),
@@ -528,10 +553,7 @@ class _PublicProfileViewState extends State<PublicProfileView> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () => ScaffoldMessenger.of(context)
-                              .showSnackBar(SnackBar(
-                                  content: Text(
-                                      'Match Request sent to ${widget.profile.name}!'))),
+                          onPressed: widget.onConnect,
                           style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF222222),
                               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -569,7 +591,7 @@ class _PublicProfileViewState extends State<PublicProfileView> {
                     ]),
                 child: Row(
                   children: [
-                    Icon(AppIcons.warning, color: Colors.white, size: 24),
+                    const Icon(AppIcons.warning, color: Colors.white, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                         child: Column(

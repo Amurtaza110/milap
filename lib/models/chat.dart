@@ -1,4 +1,5 @@
 import 'user_profile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum MessageReadStatus { sent, delivered, read }
 
@@ -6,7 +7,7 @@ enum MessageType {
   text,
   image,
   audio
-} // Inferred from backend guide, though not in types.ts explicitly but good to have. Sticking to types.ts for now logic.
+}
 
 class Message {
   final String id;
@@ -40,15 +41,42 @@ class Message {
   }
 
   factory Message.fromMap(Map<String, dynamic> map) {
+    int ts = 0;
+    if (map['timestamp'] is Timestamp) {
+      ts = (map['timestamp'] as Timestamp).millisecondsSinceEpoch;
+    } else if (map['timestamp'] is int) {
+      ts = map['timestamp'];
+    }
+
     return Message(
       id: map['id'] ?? '',
       senderId: map['senderId'] ?? '',
       text: map['text'] ?? '',
-      timestamp: map['timestamp'] ?? 0,
+      timestamp: ts,
       isEncrypted: map['isEncrypted'] ?? false,
       readStatus: MessageReadStatus.values[map['readStatus'] ?? 0],
       reactions:
           map['reactions'] != null ? List<String>.from(map['reactions']) : null,
+    );
+  }
+
+  Message copyWith({
+    String? id,
+    String? senderId,
+    String? text,
+    int? timestamp,
+    bool? isEncrypted,
+    MessageReadStatus? readStatus,
+    List<String>? reactions,
+  }) {
+    return Message(
+      id: id ?? this.id,
+      senderId: senderId ?? this.senderId,
+      text: text ?? this.text,
+      timestamp: timestamp ?? this.timestamp,
+      isEncrypted: isEncrypted ?? this.isEncrypted,
+      readStatus: readStatus ?? this.readStatus,
+      reactions: reactions ?? this.reactions,
     );
   }
 }
@@ -62,6 +90,7 @@ class Chat {
   final int autoDeleteHours;
   final bool? isPartnerTyping;
   final bool isArchived;
+  final int timestamp;
 
   Chat({
     required this.id,
@@ -72,44 +101,53 @@ class Chat {
     required this.autoDeleteHours,
     this.isPartnerTyping,
     this.isArchived = false,
+    this.timestamp = 0,
   });
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'participants': participants.map((x) => x.toMap()).toList(),
+      'participants_ids': participants.map((x) => x.id).toList(), // Store IDs for queries
       'lastMessage': lastMessage,
       'unreadCount': unreadCount,
       'sharedVaultId': sharedVaultId,
       'autoDeleteHours': autoDeleteHours,
       'isPartnerTyping': isPartnerTyping,
       'isArchived': isArchived,
+      'timestamp': timestamp == 0 ? FieldValue.serverTimestamp() : timestamp,
     };
   }
 
-  factory Chat.fromMap(Map<String, dynamic> map) {
+  factory Chat.fromMap(Map<String, dynamic> map, List<UserProfile> resolvedParticipants) {
+    int ts = 0;
+    if (map['timestamp'] is Timestamp) {
+      ts = (map['timestamp'] as Timestamp).millisecondsSinceEpoch;
+    } else if (map['timestamp'] is int) {
+      ts = map['timestamp'];
+    }
+
     return Chat(
       id: map['id'] ?? '',
-      participants: List<UserProfile>.from(
-          map['participants']?.map((x) => UserProfile.fromMap(x)) ?? []),
+      participants: resolvedParticipants,
       lastMessage: map['lastMessage'],
       unreadCount: map['unreadCount'] ?? 0,
       sharedVaultId: map['sharedVaultId'],
       autoDeleteHours: map['autoDeleteHours'] ?? 24,
       isPartnerTyping: map['isPartnerTyping'],
       isArchived: map['isArchived'] ?? false,
+      timestamp: ts,
     );
   }
 
   Chat copyWith({
     String? id,
     List<UserProfile>? participants,
-    String? lastMessage,
-    int? unreadCount,
+    String? lastMessage,    int? unreadCount,
     String? sharedVaultId,
     int? autoDeleteHours,
     bool? isPartnerTyping,
     bool? isArchived,
+    int? timestamp,
   }) {
     return Chat(
       id: id ?? this.id,
@@ -120,6 +158,7 @@ class Chat {
       autoDeleteHours: autoDeleteHours ?? this.autoDeleteHours,
       isPartnerTyping: isPartnerTyping ?? this.isPartnerTyping,
       isArchived: isArchived ?? this.isArchived,
+      timestamp: timestamp ?? this.timestamp,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/room.dart';
 import '../../../providers/user_provider.dart';
+import '../../../services/room_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text_styles.dart';
 
@@ -24,11 +25,13 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _pinController = TextEditingController();
+  final RoomService _roomService = RoomService();
 
   RoomCategory _selectedCategory = RoomCategory.General;
   bool _isPublic = true;
   int _maxParticipants = 50;
   bool _requirePin = false;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -38,9 +41,11 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
     super.dispose();
   }
 
-  void _createRoom() {
+  Future<void> _createRoom() async {
     if (_formKey.currentState!.validate()) {
       final user = Provider.of<UserProvider>(context, listen: false).user!;
+
+      setState(() => _isSaving = true);
 
       final room = Room(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -65,7 +70,14 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         createdAt: DateTime.now(),
       );
 
-      widget.onCreate(room);
+      try {
+        await _roomService.createRoom(room);
+        widget.onCreate(room);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to launch room: $e')));
+      } finally {
+        if (mounted) setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -73,37 +85,43 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.milapPlusSecondary,
-      body: Column(
+      body: Stack(
         children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
-              physics: const BouncingScrollPhysics(),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInputSection('ROOM NAME', _nameController,
-                        hint: "What's the vibe?",
-                        icon: Icons.edit_note_rounded),
-                    const SizedBox(height: 24),
-                    _buildInputSection('DESCRIPTION', _descriptionController,
-                        hint: 'Tell people what makes this room special...',
-                        icon: Icons.description_rounded,
-                        maxLines: 3),
-                    const SizedBox(height: 32),
-                    _buildCategoryGrid(),
-                    const SizedBox(height: 32),
-                    _buildPrivacySection(),
-                    const SizedBox(height: 32),
-                    _buildCapacitySection(),
-                  ],
+          Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+                  physics: const BouncingScrollPhysics(),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInputSection('ROOM NAME', _nameController,
+                            hint: "What's the vibe?",
+                            icon: Icons.edit_note_rounded),
+                        const SizedBox(height: 24),
+                        _buildInputSection('DESCRIPTION', _descriptionController,
+                            hint: 'Tell people what makes this room special...',
+                            icon: Icons.description_rounded,
+                            maxLines: 3),
+                        const SizedBox(height: 32),
+                        _buildCategoryGrid(),
+                        const SizedBox(height: 32),
+                        _buildPrivacySection(),
+                        const SizedBox(height: 32),
+                        _buildCapacitySection(),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
+          if (_isSaving)
+            Container(color: Colors.black54, child: const Center(child: CircularProgressIndicator())),
         ],
       ),
       bottomSheet: _buildBottomBar(),
@@ -122,7 +140,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         children: [
           IconButton(
             onPressed: widget.onBack,
-            icon: Icon(Icons.arrow_back_ios_new_rounded,
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: Colors.white, size: 20),
           ),
           const SizedBox(width: 8),
@@ -150,7 +168,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               border: Border.all(
                   color: AppColors.milapPlusPrimary.withOpacity(0.2)),
             ),
-            child: Icon(Icons.stars_rounded,
+            child: const Icon(Icons.stars_rounded,
                 color: AppColors.milapPlusPrimary, size: 24),
           ),
         ],
@@ -326,9 +344,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                 Icon(Icons.shield_rounded,
                     color: AppColors.milapPlusPrimary, size: 22),
                 const SizedBox(width: 12),
-                Expanded(
+                const Expanded(
                     child: Text('Require Join PIN',
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: Colors.white, fontWeight: FontWeight.bold))),
                 Switch(
                   value: _requirePin,
@@ -410,8 +428,8 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Room Capacity',
-                  style: const TextStyle(
+              const Text('Room Capacity',
+                  style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 16)),
@@ -449,7 +467,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
       ),
       child: ElevatedButton(
-        onPressed: _createRoom,
+        onPressed: _isSaving ? null : _createRoom,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.milapPlusPrimary,
           foregroundColor: Colors.black,
@@ -459,7 +477,9 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           elevation: 12,
           shadowColor: AppColors.milapPlusPrimary.withOpacity(0.3),
         ),
-        child: const Text('LAUNCH ROOM',
+        child: _isSaving
+          ? const CircularProgressIndicator(color: Colors.black)
+          : const Text('LAUNCH ROOM',
             style: TextStyle(
                 fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
       ),

@@ -1,22 +1,18 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/app_screen.dart';
 import '../../providers/user_provider.dart';
+import '../../services/user_service.dart';
 import '../../widgets/navigation.dart' as Nav;
 import 'dashboard.dart';
 import '../messages/messages_screen.dart';
-import '../milap_plus/room/chat_room.dart';
+import '../messages/chat_screen.dart';
 import '../profile/profile_screen.dart';
 import '../profile/edit_profile_screen.dart';
 import '../milap_plus/hookup_mode_screen.dart';
 import '../wallet/heart_store_screen.dart';
 import 'notification_screen.dart';
-import '../onboarding/splash_screen.dart';
-import '../auth/login_screen.dart';
-import '../auth/otp_screen.dart';
-import '../onboarding/onboarding_screen.dart';
 import '../profile/public_profile_view.dart';
 import '../wallet/wallet_screen.dart';
 import 'support_screen.dart';
@@ -43,48 +39,44 @@ class RootScreen extends StatefulWidget {
   State<RootScreen> createState() => _RootScreenState();
 }
 
-class _RootScreenState extends State<RootScreen> {
-  AppScreen _currentScreen = AppScreen.SPLASH;
-  String _phoneNumber = '';
-  dynamic _activeChat; // Replace with Chat model when ready
+class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
+  AppScreen _currentScreen = AppScreen.DASHBOARD;
+  dynamic _activeChat;
   dynamic _viewingProfile;
   dynamic _activeEvent;
   dynamic _activeRoom;
   StreamSubscription<ScreenshotEvent>? _screenshotSubscription;
+  final UserService _userService = UserService();
 
   @override
   void initState() {
     super.initState();
-    _startSplashScreenTimer();
+    WidgetsBinding.instance.addObserver(this);
     _initScreenshotMonitoring();
+    _setOnlineStatus(true);
   }
 
-  void _startSplashScreenTimer() {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        _handleAuthState(userProvider);
-      }
-    });
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _screenshotSubscription?.cancel();
+    _setOnlineStatus(false);
+    super.dispose();
   }
 
-  void _handleAuthState(UserProvider userProvider) {
-    if (userProvider.isAuthenticated) {
-      if (userProvider.user?.name.isEmpty ?? true) {
-        setState(() => _currentScreen = AppScreen.ONBOARDING);
-      } else if (userProvider.user?.appPin != null &&
-          _currentScreen != AppScreen.PIN_LOCK) {
-        setState(() => _currentScreen = AppScreen.PIN_LOCK);
-      } else {
-        setState(() => _currentScreen = AppScreen.DASHBOARD);
-      }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _setOnlineStatus(true);
     } else {
-      // If we are already in LOGIN or OTP, don't force reset unless we were just DASHBOARD
-      if (_currentScreen != AppScreen.LOGIN &&
-          _currentScreen != AppScreen.OTP &&
-          _currentScreen != AppScreen.SPLASH) {
-        setState(() => _currentScreen = AppScreen.LOGIN);
-      }
+      _setOnlineStatus(false);
+    }
+  }
+
+  void _setOnlineStatus(bool isOnline) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.user != null) {
+      _userService.updateOnlineStatus(userProvider.user!.id, isOnline);
     }
   }
 
@@ -102,7 +94,6 @@ class _RootScreenState extends State<RootScreen> {
 
     final detectionService = ScreenshotDetectionService();
 
-    // Only track warnings for the screenshot taker
     if (event.userId == user.id) {
       final warnings = detectionService.getWarningCount(user.id);
       final exceeded = detectionService.hasExceededScreenshotLimit(user.id);
@@ -126,12 +117,6 @@ class _RootScreenState extends State<RootScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _screenshotSubscription?.cancel();
-    super.dispose();
-  }
-
   void _navigateTo(AppScreen screen) {
     setState(() => _currentScreen = screen);
   }
@@ -140,6 +125,8 @@ class _RootScreenState extends State<RootScreen> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
+
+    if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     Widget screenWidget;
     bool showBottomNav = [
@@ -151,43 +138,8 @@ class _RootScreenState extends State<RootScreen> {
     ].contains(_currentScreen);
 
     switch (_currentScreen) {
-      case AppScreen.SPLASH:
-        screenWidget = const SplashScreen();
-        break;
-      case AppScreen.LOGIN:
-        screenWidget = LoginScreen(onLogin: (phone) {
-          setState(() {
-            _phoneNumber = phone;
-            _currentScreen = AppScreen.OTP;
-          });
-        });
-        break;
-      case AppScreen.OTP:
-        screenWidget = OTPScreen(
-          phoneNumber: _phoneNumber,
-          onVerify: (success) {
-            if (success) {
-              // Auth listener in UserProvider will trigger state change,
-              // but we can proactively move to DASHBOARD/ONBOARDING
-              _navigateTo(AppScreen.ONBOARDING);
-            }
-          },
-          onBack: () => _navigateTo(AppScreen.LOGIN),
-        );
-        break;
-      case AppScreen.ONBOARDING:
-        screenWidget = OnboardingScreen(
-          phoneNumber: _phoneNumber,
-          onComplete: (u) {
-            userProvider.setCurrentUser(u);
-            _navigateTo(AppScreen.DASHBOARD);
-          },
-        );
-        break;
       case AppScreen.DASHBOARD:
-        screenWidget = Dashboard(
-          onNavigate: _navigateTo,
-        );
+        screenWidget = Dashboard(onNavigate: _navigateTo);
         break;
       case AppScreen.MESSAGES:
         screenWidget = MessagesScreen(
@@ -201,31 +153,11 @@ class _RootScreenState extends State<RootScreen> {
         );
         break;
       case AppScreen.CHAT_ROOM:
-        screenWidget = ChatRoom(
-          chat: _activeChat,
-          onBack: () => _navigateTo(AppScreen.MESSAGES),
-          onOpenSharedVault: (id) => _navigateTo(AppScreen.PRIVATE_WALLET),
-          onBlockUser: (id) {
-            if (user != null) {
-              userProvider.updateUser(user.copyWith(
-                  blockedUserIds: [...(user.blockedUserIds ?? []), id]));
-              _navigateTo(AppScreen.MESSAGES);
-            }
-          },
-          onViewProfile: () {
-            setState(() {
-              _viewingProfile = _activeChat?.participants[0];
-              _currentScreen = AppScreen.PUBLIC_PROFILE_VIEW;
-            });
-          },
-        );
+        screenWidget = ChatScreen(chat: _activeChat);
         break;
       case AppScreen.PROFILE:
         screenWidget = ProfileScreen(
-          onLogout: () {
-            userProvider.setCurrentUser(null);
-            _navigateTo(AppScreen.LOGIN);
-          },
+          onLogout: () => userProvider.logout(),
           onEdit: () => _navigateTo(AppScreen.EDIT_PROFILE),
           onUpgrade: () => _navigateTo(AppScreen.UPGRADE_GOLD),
           onOpenWallet: () => _navigateTo(AppScreen.PRIVATE_WALLET),
@@ -236,7 +168,7 @@ class _RootScreenState extends State<RootScreen> {
         break;
       case AppScreen.EDIT_PROFILE:
         screenWidget = EditProfileScreen(
-          user: user!,
+          user: user,
           onSave: (u) {
             userProvider.updateUser(u);
             _navigateTo(AppScreen.PROFILE);
@@ -249,7 +181,7 @@ class _RootScreenState extends State<RootScreen> {
           onBack: () => _navigateTo(AppScreen.DASHBOARD),
           onToggleHookup: (active, intent) {
             userProvider.updateUser(
-                user!.copyWith(hookupActive: active, hookupIntent: intent));
+                user.copyWith(hookupActive: active, hookupIntent: intent));
           },
           onCreateEvent: () => _navigateTo(AppScreen.CREATE_EVENT),
           onManageEvents: () => _navigateTo(AppScreen.MY_EVENTS),
@@ -275,7 +207,7 @@ class _RootScreenState extends State<RootScreen> {
         break;
       case AppScreen.EVENTS:
         screenWidget = EventScreen(
-          user: user!,
+          user: user,
           onEventClick: (e) {
             setState(() {
               _activeEvent = e;
@@ -290,7 +222,7 @@ class _RootScreenState extends State<RootScreen> {
       case AppScreen.EVENT_DETAILS:
         screenWidget = EventDetailsScreen(
           event: _activeEvent,
-          user: user!,
+          user: user,
           onBack: () => _navigateTo(AppScreen.EVENTS),
           onUpgrade: () => _navigateTo(AppScreen.UPGRADE_GOLD),
           onBook: () => _navigateTo(AppScreen.EVENT_BOOKING),
@@ -299,7 +231,7 @@ class _RootScreenState extends State<RootScreen> {
       case AppScreen.EVENT_BOOKING:
         screenWidget = EventBookingScreen(
           event: _activeEvent,
-          user: user!,
+          user: user,
           onBack: () => _navigateTo(AppScreen.EVENT_DETAILS),
           onSuccess: () => _navigateTo(AppScreen.MY_TICKETS),
         );
@@ -340,14 +272,14 @@ class _RootScreenState extends State<RootScreen> {
         break;
       case AppScreen.PRIVATE_WALLET:
         screenWidget = WalletScreen(
-          user: user!,
+          user: user,
           onUpdateUser: (u) => userProvider.updateUser(u),
           onBack: () => _navigateTo(AppScreen.PROFILE),
         );
         break;
       case AppScreen.SUPPORT:
         screenWidget = SupportScreen(
-          user: user!,
+          user: user,
           onBack: () => _navigateTo(AppScreen.PROFILE),
         );
         break;
@@ -355,7 +287,7 @@ class _RootScreenState extends State<RootScreen> {
         screenWidget = UpgradeGoldScreen(
           onBack: () => _navigateTo(AppScreen.DASHBOARD),
           onUpgrade: () {
-            userProvider.updateUser(user!.copyWith(isMilapGold: true));
+            userProvider.updateUser(user.copyWith(isMilapGold: true));
             _navigateTo(AppScreen.PROFILE);
           },
         );
@@ -365,9 +297,7 @@ class _RootScreenState extends State<RootScreen> {
           profile: _viewingProfile,
           onBack: () => _navigateTo(AppScreen.DASHBOARD),
           onUpgrade: () => _navigateTo(AppScreen.UPGRADE_GOLD),
-          onConnect: () {
-            // Logic for connecting
-          },
+          onConnect: () {},
         );
         break;
       case AppScreen.SENT_REQUESTS:
@@ -412,14 +342,14 @@ class _RootScreenState extends State<RootScreen> {
         break;
       case AppScreen.PIN_LOCK:
         screenWidget = PinLockScreen(
-          user: user!,
+          user: user,
           onVerify: () => _navigateTo(AppScreen.DASHBOARD),
           onUpdateUser: (u) => userProvider.updateUser(u),
         );
         break;
       case AppScreen.CHANGE_PIN:
         screenWidget = PinLockScreen(
-          user: user!,
+          user: user,
           mode: 'change',
           onVerify: () => _navigateTo(AppScreen.PROFILE),
           onUpdateUser: (u) => userProvider.updateUser(u),
@@ -427,7 +357,7 @@ class _RootScreenState extends State<RootScreen> {
         );
         break;
       default:
-        screenWidget = const SplashScreen();
+        screenWidget = Dashboard(onNavigate: _navigateTo);
     }
 
     return Scaffold(

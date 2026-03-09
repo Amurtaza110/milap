@@ -1,61 +1,33 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/user_provider.dart';
-import 'theme/app_theme.dart';
-import 'screens/home/root_screen.dart';
-
-import 'package:firebase_core/firebase_core.dart';
-
-bool isFirebaseInitialized = false;
+import 'package:milap/providers/user_provider.dart';
+import 'package:milap/screens/auth/login_screen.dart';
+import 'package:milap/screens/auth/otp_screen.dart';
+import 'package:milap/screens/onboarding/onboarding_screen.dart';
+import 'package:milap/screens/home/root_screen.dart';
+import 'package:milap/theme/app_theme.dart';
+import 'package:milap/services/push_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await Firebase.initializeApp();
-    isFirebaseInitialized = true;
-  } catch (e) {
-    debugPrint('Firebase initialization failed: $e');
-  }
-  runApp(MilapApp());
+  
+  // Initialize Firebase using native configuration (google-services.json)
+  await Firebase.initializeApp();
+
+  // Initialize Push Notifications
+  final pushService = PushNotificationService();
+  await pushService.initialize();
+  
+  runApp(const MilapApp());
 }
 
 class MilapApp extends StatelessWidget {
+  const MilapApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    if (!isFirebaseInitialized) {
-      return MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 64),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Firebase Configuration Missing',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'The app could not find your Firebase configuration files (google-services.json or GoogleService-Info.plist).',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Please add these files to your project or run "flutterfire configure" to link your app to Firebase.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => UserProvider()),
@@ -64,8 +36,66 @@ class MilapApp extends StatelessWidget {
         title: 'Milap',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const RootScreen(),
+        home: const AuthWrapper(),
       ),
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        final firebaseUser = snapshot.data;
+
+        if (firebaseUser == null) {
+          return LoginScreen(
+            onLogin: (phoneNumber) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => OTPScreen(
+                    phoneNumber: phoneNumber,
+                    onVerify: (success) {
+                      if (success) Navigator.of(context).pop();
+                    },
+                    onBack: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              );
+            },
+          );
+        }
+
+        if (!userProvider.isInitialLoadDone) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        if (userProvider.user == null) {
+          return OnboardingScreen(
+            phoneNumber: firebaseUser.phoneNumber ?? '',
+            uid: firebaseUser.uid,
+            onComplete: (profile) async {
+              await userProvider.updateProfile(profile);
+            },
+          );
+        }
+
+        // Successfully authenticated and profile loaded
+        // Update the FCM token for push notifications
+        PushNotificationService().updateToken(userProvider.user!.id);
+
+        return const RootScreen();
+      },
     );
   }
 }

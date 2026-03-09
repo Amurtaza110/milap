@@ -7,15 +7,18 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_button_styles.dart';
 import '../../services/mock_data_service.dart';
+import '../../services/image_upload_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final Function(UserProfile) onComplete;
   final String phoneNumber;
+  final String uid;
 
   const OnboardingScreen({
     Key? key,
     required this.onComplete,
     required this.phoneNumber,
+    required this.uid,
   }) : super(key: key);
 
   @override
@@ -25,6 +28,8 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   int _step = 1;
   final PageController _pageController = PageController();
+  final ImageUploadService _uploadService = ImageUploadService();
+  bool _isSaving = false;
 
   // Form State
   String _name = '';
@@ -40,16 +45,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String _photo = 'https://picsum.photos/id/64/800/1200';
   final ImagePicker _picker = ImagePicker();
 
-  void _handleNext() {
+  Future<void> _handleNext() async {
     if (_step == 1) {
       if (_name.isEmpty || _dob == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Please enter Name and Date of Birth.")));
+        _showError("Please enter Name and Date of Birth.");
         return;
       }
       if (_isCouple && (_partner2Name.isEmpty || _partner2Dob == null)) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Please enter Partner's Name and Date of Birth.")));
+        _showError("Please enter Partner's Name and Date of Birth.");
         return;
       }
     }
@@ -59,33 +62,53 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _pageController.nextPage(
           duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     } else {
-      widget.onComplete(UserProfile(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _isCouple ? '$_name & $_partner2Name' : _name,
-        partner2Name: _isCouple ? _partner2Name : null,
-        age: _calculateAge(_dob!),
-        partner2Age: _isCouple ? _calculateAge(_partner2Dob!) : null,
-        gender: _gender,
-        partner2Gender: _isCouple ? _partner2Gender : null,
-        dob: _dob!.toIso8601String(),
-        partner2Dob: _isCouple ? _partner2Dob!.toIso8601String() : null,
-        location: _city,
-        bio: _bio,
-        interests: _interests,
-        photos: [_photo],
-        isOnline: true,
-        rating: 5.0,
-        reviewsCount: 0,
-        isCouple: _isCouple,
-        type: _isCouple ? UserType.Couple : UserType.Individual,
-        isVerified: false,
-        reviews: [],
-        lookingForDates: true,
-        isDeactivated: false,
-        heartsBalance: 10,
-        lastHeartRefill: DateTime.now().toIso8601String().split('T')[0],
-      ));
+      setState(() => _isSaving = true);
+      try {
+        // Step 1: Upload Photo to Firebase Storage (Real user ready)
+        String photoUrl = _photo;
+        if (!_photo.startsWith('http')) {
+           photoUrl = await _uploadService.uploadImage(_photo, 'profiles');
+        }
+
+        // Step 2: Create Profile Object
+        final userProfile = UserProfile(
+          id: widget.uid,
+          name: _isCouple ? '$_name & $_partner2Name' : _name,
+          partner2Name: _isCouple ? _partner2Name : null,
+          age: _calculateAge(_dob!),
+          partner2Age: _isCouple ? _calculateAge(_partner2Dob!) : null,
+          gender: _gender,
+          partner2Gender: _isCouple ? _partner2Gender : null,
+          dob: _dob!.toIso8601String(),
+          partner2Dob: _isCouple ? _partner2Dob!.toIso8601String() : null,
+          location: _city,
+          bio: _bio,
+          interests: _interests,
+          photos: [photoUrl],
+          isOnline: true,
+          rating: 5.0,
+          reviewsCount: 0,
+          isCouple: _isCouple,
+          type: _isCouple ? UserType.Couple : UserType.Individual,
+          isVerified: false,
+          reviews: [],
+          lookingForDates: true,
+          isDeactivated: false,
+          heartsBalance: 10,
+          lastHeartRefill: DateTime.now().toIso8601String().split('T')[0],
+        );
+
+        widget.onComplete(userProfile);
+      } catch (e) {
+        _showError("Failed to save profile. Please try again.");
+      } finally {
+        if (mounted) setState(() => _isSaving = false);
+      }
     }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.redAccent));
   }
 
   int _calculateAge(DateTime dob) {
@@ -100,67 +123,92 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
+      body: Stack(
         children: [
-          // Progress Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(32, 64, 32, 24),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: _step / 4,
+          Column(
+            children: [
+              // Progress Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(32, 64, 32, 24),
+                child: Row(
+                  children: [
+                    Expanded(
                       child: Container(
+                        height: 6,
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.background,
                           borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: _step / 4,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
                         ),
                       ),
                     ),
+                    const SizedBox(width: 24),
+                    Text(
+                      '$_step/4',
+                      style: AppTextStyles.label
+                          .copyWith(color: AppColors.primary, letterSpacing: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildStep1(),
+                    _buildStep2(),
+                    _buildStep3(),
+                    _buildStep4(),
+                  ],
+                ),
+              ),
+
+              // Footer
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _handleNext,
+                    style: AppButtonStyles.primary,
+                    child: _isSaving
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(_step == 4 ? 'COMPLETE MILAP' : 'CONTINUE'),
                   ),
                 ),
-                const SizedBox(width: 24),
-                Text(
-                  '$_step/4',
-                  style: AppTextStyles.label
-                      .copyWith(color: AppColors.primary, letterSpacing: 1.5),
+              ),
+            ],
+          ),
+          if (_isSaving)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text("Setting up your profile...", style: TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
-          ),
-
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildStep1(),
-                _buildStep2(),
-                _buildStep3(),
-                _buildStep4(),
-              ],
-            ),
-          ),
-
-          // Footer
-          Padding(
-            padding: const EdgeInsets.all(32),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _handleNext,
-                style: AppButtonStyles.primary,
-                child: Text(_step == 4 ? 'COMPLETE MILAP' : 'CONTINUE'),
               ),
             ),
-          ),
         ],
       ),
     );

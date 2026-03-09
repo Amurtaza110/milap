@@ -4,7 +4,7 @@ import '../../models/enums.dart';
 import '../../models/user_profile.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/event_service.dart';
 
 class EventScreen extends StatefulWidget {
   final UserProfile user;
@@ -29,9 +29,9 @@ class EventScreen extends StatefulWidget {
 class _EventScreenState extends State<EventScreen> {
   String _filter = 'All';
   final List<String> _filters = ['All', 'Dance', 'Food', 'Chill', 'Party'];
+  final EventService _eventService = EventService();
 
   Widget _buildPromotionCarousel(List<SocialEvent> events) {
-    // Get events with promotional pricing or special offers
     final promotionEvents =
         events.where((e) => (e.isPromoted ?? false)).take(5).toList();
 
@@ -83,15 +83,11 @@ class _EventScreenState extends State<EventScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     image: DecorationImage(
-                      image: NetworkImage(event.media[0]),
+                      image: NetworkImage(event.media.isNotEmpty ? event.media[0] : 'https://picsum.photos/800/600'),
                       fit: BoxFit.cover,
                     ),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
                     ],
                   ),
                   child: Stack(
@@ -102,45 +98,24 @@ class _EventScreenState extends State<EventScreen> {
                           gradient: LinearGradient(
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
-                            colors: [
-                              Colors.black.withOpacity(0.7),
-                              Colors.transparent,
-                            ],
+                            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
                           ),
                         ),
                       ),
-                      // Special Offer Badge
                       Positioned(
                         top: 12,
                         right: 12,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: Colors.orange.shade700,
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.orange.withOpacity(0.4),
-                                blurRadius: 4,
-                                spreadRadius: 1,
-                              ),
-                            ],
                           ),
-                          child: Text(
-                            'SALE',
-                            style: AppTextStyles.label.copyWith(
-                              fontSize: 7,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.0,
-                            ),
+                          child: Text('SALE',
+                            style: AppTextStyles.label.copyWith(fontSize: 7, color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0),
                           ),
                         ),
                       ),
-                      // Event Info
                       Positioned(
                         bottom: 12,
                         left: 12,
@@ -149,23 +124,13 @@ class _EventScreenState extends State<EventScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              event.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.h4.copyWith(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
+                            Text(event.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.h4.copyWith(color: Colors.white, fontSize: 12),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'PKR ${event.packages[0].price}',
-                              style: AppTextStyles.label.copyWith(
-                                color: Colors.orange.shade200,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                              ),
+                              'PKR ${event.packages.isNotEmpty ? event.packages[0].price : 0}',
+                              style: AppTextStyles.label.copyWith(color: Colors.orange.shade200, fontSize: 10, fontWeight: FontWeight.w900),
                             ),
                           ],
                         ),
@@ -183,15 +148,6 @@ class _EventScreenState extends State<EventScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mockEvents = MockDataService().getMockEvents();
-    final filteredEvents = _filter == 'All'
-        ? mockEvents
-        : mockEvents.where((e) => e.eventType.name == _filter).toList();
-    final featuredEvents = mockEvents
-        .where(
-            (e) => e.accessLevel == AccessLevel.Gold || (e.isPromoted ?? false))
-        .toList();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -251,223 +207,187 @@ class _EventScreenState extends State<EventScreen> {
           ),
 
           Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Featured Section
-                  if (featuredEvents.isNotEmpty) ...[
-                    Padding(
+            child: FutureBuilder<List<SocialEvent>>(
+              future: _eventService.getEvents(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final allEvents = snapshot.data ?? [];
+
+                final filteredEvents = _filter == 'All'
+                    ? allEvents
+                    : allEvents.where((e) => e.eventType.name == _filter).toList();
+
+                final featuredEvents = allEvents
+                    .where((e) => e.accessLevel == AccessLevel.Gold || (e.isPromoted ?? false))
+                    .toList();
+
+                if (allEvents.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.event_note_rounded, size: 64, color: AppColors.textExtraLight),
+                        const SizedBox(height: 16),
+                        Text('No events available yet.', style: AppTextStyles.body.copyWith(color: AppColors.textExtraLight)),
+                      ],
+                    ),
+                  );
+                }
+
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Featured Section
+                      if (featuredEvents.isNotEmpty) ...[
+                        Padding(
+                            padding: const EdgeInsets.fromLTRB(32, 32, 32, 16),
+                            child: Text('✨ FEATURED EVENTS',
+                                style: AppTextStyles.label.copyWith(
+                                    fontSize: 9,
+                                    color: AppColors.textExtraLight,
+                                    letterSpacing: 2.0))),
+                        SizedBox(
+                          height: 350,
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: featuredEvents.length,
+                            itemBuilder: (context, index) {
+                              final event = featuredEvents[index];
+                              return GestureDetector(
+                                onTap: () => widget.onEventClick(event),
+                                child: Container(
+                                  width: 280,
+                                  margin: const EdgeInsets.only(right: 16),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(35),
+                                      image: DecorationImage(
+                                          image: NetworkImage(event.media.isNotEmpty ? event.media[0] : 'https://picsum.photos/800/600'),
+                                          fit: BoxFit.cover)),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                          decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(35),
+                                              gradient: LinearGradient(
+                                                  begin: Alignment.bottomCenter,
+                                                  end: Alignment.topCenter,
+                                                  colors: [Colors.black.withOpacity(0.8), Colors.transparent]))),
+                                      Positioned(
+                                          top: 20,
+                                          left: 20,
+                                          child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(12)),
+                                              child: Text(
+                                                  event.accessLevel == AccessLevel.Gold ? 'GOLD ONLY' : 'FEATURED',
+                                                  style: AppTextStyles.label.copyWith(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900)))),
+                                      Positioned(
+                                          bottom: 24,
+                                          left: 24,
+                                          right: 24,
+                                          child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(event.title, style: AppTextStyles.h2.copyWith(color: Colors.white, fontSize: 20, height: 1.2)),
+                                                const SizedBox(height: 8),
+                                                Text('${event.date} • ${event.location.toUpperCase()}',
+                                                    style: AppTextStyles.label.copyWith(color: Colors.white70, fontSize: 9, letterSpacing: 1.0))
+                                              ])),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+
+                      // Promotion Carousel
+                      _buildPromotionCarousel(allEvents),
+
+                      // Filters
+                      Padding(
                         padding: const EdgeInsets.fromLTRB(32, 32, 32, 16),
-                        child: Text('✨ FEATURED EVENTS',
-                            style: AppTextStyles.label.copyWith(
-                                fontSize: 9,
-                                color: AppColors.textExtraLight,
-                                letterSpacing: 2.0))),
-                    SizedBox(
-                      height: 350,
-                      child: ListView.builder(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: _filters
+                                .map((f) => GestureDetector(
+                                      onTap: () => setState(() => _filter = f),
+                                      child: Container(
+                                        margin: const EdgeInsets.only(right: 12),
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                        decoration: BoxDecoration(
+                                            color: _filter == f ? AppColors.primary : Colors.white,
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(color: _filter == f ? AppColors.primary : AppColors.border, width: 1.5)),
+                                        child: Text(f.toUpperCase(),
+                                            style: AppTextStyles.label.copyWith(fontSize: 9, color: _filter == f ? Colors.white : AppColors.textExtraLight, letterSpacing: 1.0)),
+                                      ),
+                                    ))
+                                .toList(),
+                          ),
+                        ),
+                      ),
+
+                      // Event List
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         padding: const EdgeInsets.symmetric(horizontal: 32),
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: featuredEvents.length,
+                        itemCount: filteredEvents.length,
                         itemBuilder: (context, index) {
-                          final event = featuredEvents[index];
+                          final event = filteredEvents[index];
                           return GestureDetector(
                             onTap: () => widget.onEventClick(event),
                             child: Container(
-                              width: 280,
-                              margin: const EdgeInsets.only(right: 16),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(35),
-                                  image: DecorationImage(
-                                      image: NetworkImage(event.media[0]),
-                                      fit: BoxFit.cover)),
-                              child: Stack(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(color: AppColors.border)),
+                              child: Row(
                                 children: [
-                                  Container(
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(35),
-                                          gradient: LinearGradient(
-                                              begin: Alignment.bottomCenter,
-                                              end: Alignment.topCenter,
-                                              colors: [
-                                                Colors.black.withOpacity(0.8),
-                                                Colors.transparent
-                                              ]))),
-                                  Positioned(
-                                      top: 20,
-                                      left: 20,
-                                      child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(
-                                              color: Colors.white24,
-                                              borderRadius:
-                                                  BorderRadius.circular(12)),
-                                          child: Text(
-                                              event.accessLevel ==
-                                                      AccessLevel.Gold
-                                                  ? 'GOLD ONLY'
-                                                  : 'FEATURED',
-                                              style: AppTextStyles.label
-                                                  .copyWith(
-                                                      color: Colors.white,
-                                                      fontSize: 8,
-                                                      fontWeight:
-                                                          FontWeight.w900)))),
-                                  Positioned(
-                                      bottom: 24,
-                                      left: 24,
-                                      right: 24,
-                                      child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(event.title,
-                                                style: AppTextStyles.h2
-                                                    .copyWith(
-                                                        color: Colors.white,
-                                                        fontSize: 20,
-                                                        height: 1.2)),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                                '${event.date} • ${event.location.toUpperCase()}',
-                                                style: AppTextStyles.label
-                                                    .copyWith(
-                                                        color: Colors.white70,
-                                                        fontSize: 9,
-                                                        letterSpacing: 1.0))
-                                          ])),
+                                  ClipRRect(
+                                      borderRadius: BorderRadius.circular(18),
+                                      child: Image.network(event.media.isNotEmpty ? event.media[0] : 'https://picsum.photos/800/600',
+                                          width: 80, height: 80, fit: BoxFit.cover)),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(event.eventType.name.toUpperCase(),
+                                            style: AppTextStyles.label.copyWith(color: AppColors.primary, fontSize: 8, letterSpacing: 1.0)),
+                                        Text(event.title, style: AppTextStyles.h4.copyWith(fontSize: 14, color: AppColors.textMain)),
+                                        const SizedBox(height: 4),
+                                        Text(event.location,
+                                            style: AppTextStyles.label.copyWith(fontSize: 9, color: AppColors.textExtraLight, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                  Text('PKR ${event.packages.isNotEmpty ? event.packages[0].price : 0}',
+                                      style: AppTextStyles.h4.copyWith(fontSize: 12, color: AppColors.textMain)),
                                 ],
                               ),
                             ),
                           );
                         },
                       ),
-                    ),
-                  ],
-
-                  // Promotion Carousel
-                  _buildPromotionCarousel(mockEvents),
-
-                  // Filters
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(32, 32, 32, 16),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Row(
-                        children: _filters
-                            .map((f) => GestureDetector(
-                                  onTap: () => setState(() => _filter = f),
-                                  child: Container(
-                                    margin: const EdgeInsets.only(right: 12),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 10),
-                                    decoration: BoxDecoration(
-                                        color: _filter == f
-                                            ? AppColors.primary
-                                            : Colors.white,
-                                        borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(
-                                            color: _filter == f
-                                                ? AppColors.primary
-                                                : AppColors.border,
-                                            width: 1.5),
-                                        boxShadow: _filter == f
-                                            ? [
-                                                BoxShadow(
-                                                  color: AppColors.primary
-                                                      .withOpacity(0.2),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 2),
-                                                )
-                                              ]
-                                            : []),
-                                    child: Text(f.toUpperCase(),
-                                        style: AppTextStyles.label.copyWith(
-                                            fontSize: 9,
-                                            color: _filter == f
-                                                ? Colors.white
-                                                : AppColors.textExtraLight,
-                                            letterSpacing: 1.0)),
-                                  ),
-                                ))
-                            .toList(),
-                      ),
-                    ),
+                      const SizedBox(height: 100),
+                    ],
                   ),
-
-                  // Event List
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    itemCount: filteredEvents.length,
-                    itemBuilder: (context, index) {
-                      final event = filteredEvents[index];
-                      return GestureDetector(
-                        onTap: () => widget.onEventClick(event),
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: AppColors.border),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ]),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                  borderRadius: BorderRadius.circular(18),
-                                  child: Image.network(event.media[0],
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover)),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(event.eventType.name.toUpperCase(),
-                                        style: AppTextStyles.label.copyWith(
-                                            color: AppColors.primary,
-                                            fontSize: 8,
-                                            letterSpacing: 1.0)),
-                                    Text(event.title,
-                                        style: AppTextStyles.h4.copyWith(
-                                            fontSize: 14,
-                                            color: AppColors.textMain)),
-                                    const SizedBox(height: 4),
-                                    Text(event.location,
-                                        style: AppTextStyles.label.copyWith(
-                                            fontSize: 9,
-                                            color: AppColors.textExtraLight,
-                                            fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                              Text('PKR ${event.packages[0].price}',
-                                  style: AppTextStyles.h4.copyWith(
-                                      fontSize: 12, color: AppColors.textMain)),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 100),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],

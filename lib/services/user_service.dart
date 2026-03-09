@@ -8,21 +8,27 @@ class UserService {
   factory UserService() => _instance;
   UserService._internal();
 
-  /// Fetch a single user profile from Firestore
-  Future<UserProfile?> fetchProfile(String uid) async {
-    try {
-      final doc = await _db.collection('users').doc(uid).get();
+  Stream<UserProfile?> streamProfile(String uid) {
+    return _db.collection('users').doc(uid).snapshots().map((doc) {
       if (doc.exists && doc.data() != null) {
         return UserProfile.fromMap(doc.data()!);
       }
       return null;
+    });
+  }
+
+  /// Update user's online status
+  Future<void> updateOnlineStatus(String uid, bool isOnline) async {
+    try {
+      await _db.collection('users').doc(uid).update({
+        'isOnline': isOnline,
+        'lastSeen': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
-      print('Error fetching profile: $e');
-      return null;
+      print('UserService: Error updating online status: $e');
     }
   }
 
-  /// Update an existing user profile or create a new one
   Future<void> updateProfile(UserProfile profile) async {
     try {
       await _db.collection('users').doc(profile.id).set(
@@ -30,59 +36,49 @@ class UserService {
             SetOptions(merge: true),
           );
     } catch (e) {
-      print('Error updating profile: $e');
+      print('UserService: Error updating profile: $e');
       rethrow;
     }
   }
 
-  /// Get the social feed (active users) paginated
-  Future<List<UserProfile>> getSocialFeed({
-    int limit = 20,
-    DocumentSnapshot? startAfter,
-  }) async {
-    try {
-      var query = _db
-          .collection('users')
-          .where('isDeactivated', isEqualTo: false)
-          .orderBy('rating', descending: true)
-          .limit(limit);
-
-      if (startAfter != null) {
-        query = query.startAfterDocument(startAfter);
-      }
-
-      final snapshot = await query.get();
-      return snapshot.docs
-          .map((doc) => UserProfile.fromMap(doc.data()))
-          .toList();
-    } catch (e) {
-      print('Error getting social feed: $e');
-      return [];
-    }
-  }
-
-  /// Block a user
-  Future<void> blockUser(String currentUserId, String targetUserId) async {
-    try {
-      await _db.collection('users').doc(currentUserId).update({
-        'blockedUserIds': FieldValue.arrayUnion([targetUserId]),
-      });
-    } catch (e) {
-      print('Error blocking user: $e');
-      rethrow;
-    }
-  }
-
-  /// Update hearts balance
   Future<void> updateHeartsBalance(String uid, int newBalance) async {
     try {
+      final String dateOnly = DateTime.now().toIso8601String().split('T')[0];
       await _db.collection('users').doc(uid).update({
         'heartsBalance': newBalance,
-        'lastHeartRefill': DateTime.now().toIso8601String(),
+        'lastHeartRefill': dateOnly,
       });
     } catch (e) {
-      print('Error updating hearts: $e');
+      print('UserService: Error updating hearts: $e');
       rethrow;
+    }
+  }
+
+  Future<List<UserProfile>> getSocialFeed({String? preferredCity, String? excludeUid}) async {
+    try {
+      final snapshot = await _db
+          .collection('users')
+          .where('isDeactivated', isEqualTo: false)
+          .get();
+
+      List<UserProfile> allUsers = snapshot.docs
+          .map((doc) => UserProfile.fromMap(doc.data()))
+          .where((u) => u.id != excludeUid)
+          .toList();
+
+      if (preferredCity != null) {
+        final targetCity = preferredCity.trim().toLowerCase();
+        allUsers.sort((a, b) {
+          final cityA = a.location.trim().toLowerCase();
+          final cityB = b.location.trim().toLowerCase();
+          if (cityA == targetCity && cityB != targetCity) return -1;
+          if (cityA != targetCity && cityB == targetCity) return 1;
+          return b.rating.compareTo(a.rating);
+        });
+      }
+      return allUsers;
+    } catch (e) {
+      return [];
     }
   }
 }

@@ -3,6 +3,7 @@ import '../../models/user_profile.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_icons.dart';
+import '../../services/support_service.dart';
 
 class SupportScreen extends StatefulWidget {
   final UserProfile user;
@@ -21,18 +22,39 @@ class SupportScreen extends StatefulWidget {
 class _SupportScreenState extends State<SupportScreen> {
   String _category = 'Feedback';
   final _messageController = TextEditingController();
+  final SupportService _supportService = SupportService();
   bool _isSubmitting = false;
   bool _submitted = false;
 
   void _handleSubmit() async {
-    if (_messageController.text.trim().isEmpty) return;
+    final message = _messageController.text.trim();
+    if (message.isEmpty) return;
+
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted)
-      setState(() {
-        _isSubmitting = false;
-        _submitted = true;
-      });
+
+    try {
+      await _supportService.submitTicket(
+        userId: widget.user.id,
+        userName: widget.user.name,
+        category: _category,
+        message: message,
+        isGold: widget.user.isMilapGold,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _submitted = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to submit ticket: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
   }
 
   @override

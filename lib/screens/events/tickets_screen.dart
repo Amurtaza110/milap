@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/social_event.dart';
-import '../../services/mock_data_service.dart';
+import 'package:provider/provider.dart';
+import '../../models/ticket.dart';
+import '../../providers/user_provider.dart';
+import '../../services/event_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_icons.dart';
@@ -18,31 +20,14 @@ class TicketsScreen extends StatefulWidget {
 }
 
 class _TicketsScreenState extends State<TicketsScreen> {
-  final List<Map<String, dynamic>> _mockTickets = [
-    {
-      'id': 't1',
-      'eventId': 'e1',
-      'packageName': 'General Admission',
-      'price': 1500,
-      'isGift': false,
-      'ticketId': 'MIL-8392',
-      'status': 'Active'
-    },
-    {
-      'id': 't2',
-      'eventId': 'e2',
-      'packageName': 'Gold Pass',
-      'price': 5000,
-      'isGift': true,
-      'senderName': 'Zain & Sarah',
-      'ticketId': 'MIL-2210',
-      'status': 'Active'
-    }
-  ];
+  final EventService _eventService = EventService();
 
   @override
   Widget build(BuildContext context) {
-    final mockEvents = MockDataService().getMockEvents();
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.user;
+
+    if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -84,9 +69,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('My Wallet',
+                          Text('My Tickets',
                               style: AppTextStyles.h2.copyWith(
-                                  color: AppColors.textMain)), // ← Line 88-89
+                                  color: AppColors.textMain)),
                           Text('EVENTS & PASSES',
                               style: AppTextStyles.label
                                   .copyWith(color: AppColors.primary))
@@ -96,14 +81,37 @@ class _TicketsScreenState extends State<TicketsScreen> {
               ),
 
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: _mockTickets.length,
-                  itemBuilder: (context, index) {
-                    final ticket = _mockTickets[index];
-                    final event =
-                        mockEvents.firstWhere((e) => e.id == ticket['eventId']);
-                    return _buildTicketItem(ticket, event);
+                child: StreamBuilder<List<Ticket>>(
+                  stream: _eventService.streamUserTickets(user.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final tickets = snapshot.data ?? [];
+
+                    if (tickets.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.confirmation_num_outlined, size: 64, color: AppColors.textExtraLight),
+                            const SizedBox(height: 16),
+                            Text('NO TICKETS BOUGHT YET',
+                                style: AppTextStyles.label.copyWith(color: AppColors.textExtraLight)),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(24),
+                      itemCount: tickets.length,
+                      itemBuilder: (context, index) {
+                        final ticket = tickets[index];
+                        return _buildTicketItem(ticket);
+                      },
+                    );
                   },
                 ),
               ),
@@ -114,7 +122,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     );
   }
 
-  Widget _buildTicketItem(Map<String, dynamic> ticket, SocialEvent event) {
+  Widget _buildTicketItem(Ticket ticket) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       height: 140,
@@ -126,15 +134,26 @@ class _TicketsScreenState extends State<TicketsScreen> {
         children: [
           Row(
             children: [
-              // Left side: Image
-              ClipRRect(
-                  borderRadius:
-                      const BorderRadius.horizontal(left: Radius.circular(24)),
-                  child: Image.network(event.media[0],
-                      width: 100,
-                      height: 140,
-                      fit: BoxFit.cover,
-                      opacity: const AlwaysStoppedAnimation(0.7))),
+              // Left side: Visual ID
+              Container(
+                width: 100,
+                height: 140,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.horizontal(left: Radius.circular(24)),
+                ),
+                child: RotatedBox(
+                  quarterTurns: 3,
+                  child: Center(
+                    child: Text(ticket.qrCode,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.w900)),
+                  ),
+                ),
+              ),
 
               // Right side: Info
               Expanded(
@@ -148,28 +167,27 @@ class _TicketsScreenState extends State<TicketsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                              child: Text(event.title,
+                              child: Text(ticket.eventTitle,
                                   style: AppTextStyles.h4
                                       .copyWith(color: AppColors.textMain),
                                   overflow: TextOverflow.ellipsis)),
-                          if (ticket['isGift'])
-                            Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                    color: AppColors.success.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8)),
-                                child: Text('🎁 GIFT',
-                                    style: AppTextStyles.label.copyWith(
-                                        color: AppColors.success,
-                                        fontSize: 8))),
+                          Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                  color: AppColors.success.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: Text(ticket.status.name.toUpperCase(),
+                                  style: AppTextStyles.label.copyWith(
+                                      color: AppColors.success,
+                                      fontSize: 8))),
                         ],
                       ),
                       Row(children: [
                         Icon(AppIcons.location,
                             size: 12, color: AppColors.textExtraLight),
                         const SizedBox(width: 4),
-                        Text(event.location.split(',')[0].toUpperCase(),
+                        Text(ticket.eventLocation.toUpperCase(),
                             style: AppTextStyles.label.copyWith(
                                 color: AppColors.textExtraLight, fontSize: 9))
                       ]),
@@ -183,19 +201,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 Text('PASS TYPE',
                                     style: AppTextStyles.label
                                         .copyWith(color: AppColors.primary)),
-                                Text(ticket['packageName'],
+                                Text(ticket.packageName,
                                     style: AppTextStyles.body.copyWith(
                                         color: AppColors.textMain,
                                         fontSize: 12))
                               ]),
-                          Container(
-                              width: 32,
-                              height: 32,
-                              decoration: const BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle),
-                              child: const Icon(AppIcons.next,
-                                  color: Colors.white, size: 16)),
+                          Text(ticket.eventDate, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ],
@@ -221,17 +232,6 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   height: 20,
                   decoration: BoxDecoration(
                       color: AppColors.surface, shape: BoxShape.circle))),
-          // Dash Line
-          Positioned(
-              left: 101,
-              top: 20,
-              bottom: 20,
-              child: Container(
-                  width: 1,
-                  decoration: BoxDecoration(
-                      border: Border.all(
-                          color: AppColors.surface.withOpacity(0.1),
-                          width: 0.5)))),
         ],
       ),
     );

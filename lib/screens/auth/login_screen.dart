@@ -19,8 +19,24 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
 
   void _handleContinue() {
-    final phone = _phoneController.text.trim();
+    String phone = _phoneController.text.trim();
     if (phone.isEmpty) return;
+
+    // Auto-fix: Remove leading zero if user typed it (e.g. 0336 -> 336)
+    if (phone.startsWith('0')) {
+      phone = phone.substring(1);
+    }
+
+    // Basic length check for Pakistani mobile numbers (3xx-xxxxxxx)
+    if (phone.length != 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid 10-digit mobile number.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     userProvider.sendOTP(
