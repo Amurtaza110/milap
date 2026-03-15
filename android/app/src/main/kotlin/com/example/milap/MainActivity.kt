@@ -1,4 +1,4 @@
-package com.example.milap
+package com.milap.app
 
 import io.flutter.embedding.android.FlutterActivity
 

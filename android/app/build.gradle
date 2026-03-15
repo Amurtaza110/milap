@@ -6,14 +6,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.milap"
-    compileSdk =   36 //flutter.compileSdkVersion
+    namespace = "com.milap.app"
+    compileSdk = 36
     ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-        // Required for flutter_local_notifications
         coreLibraryDesugaringEnabled true
     }
 
@@ -22,8 +21,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.milap"
-        minSdk = 23
+        applicationId = "com.milap.app"
+        minSdk = 24
         targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -33,6 +32,9 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -42,9 +44,20 @@ flutter {
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:33.1.0')
+    // Firebase BoM
+    implementation platform('com.google.firebase:firebase-bom:34.10.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    
+    // Core products
     implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-messaging'
+    
+    // REQUIRED: Native App Check for Play Integrity
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity'
+    // Optional: Add for debug testing without Recaptcha
+    implementation 'com.google.firebase:firebase-appcheck-debug'
 
-    // Required for flutter_local_notifications
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }

@@ -13,6 +13,21 @@ class RoomService {
     await _db.collection('rooms').doc(room.id).set(room.toMap());
   }
 
+  /// Delete a room (Host only)
+  Future<void> deleteRoom(String roomId) async {
+    // 1. Delete all messages in subcollection first (Cleanup)
+    final messages = await _db.collection('rooms').doc(roomId).collection('messages').get();
+    final batch = _db.batch();
+    for (var doc in messages.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 2. Delete the room document
+    batch.delete(_db.collection('rooms').doc(roomId));
+
+    await batch.commit();
+  }
+
   /// Stream all active rooms
   Stream<List<Room>> streamActiveRooms() {
     return _db
@@ -20,11 +35,7 @@ class RoomService {
         .where('isActive', isEqualTo: true)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) {
-              // Note: The Room class from models/room.dart needs a fromMap factory
-              // I will check the model first
-              return Room.fromMap(doc.data() as Map<String, dynamic>);
-            }).toList());
+        .map((snap) => snap.docs.map((doc) => Room.fromMap(doc.data() as Map<String, dynamic>)).toList());
   }
 
   /// Join a room
@@ -36,8 +47,6 @@ class RoomService {
 
   /// Leave a room
   Future<void> leaveRoom(String roomId, String userId) async {
-    // Note: In a real app, you'd need to find the specific participant map to remove
-    // For $0 cost, we can fetch the room, filter locally, and set back
     final doc = await _db.collection('rooms').doc(roomId).get();
     if (doc.exists) {
       final data = doc.data()!;
@@ -58,7 +67,6 @@ class RoomService {
       'timestamp': FieldValue.serverTimestamp(),
     });
     
-    // Update last activity or message count if needed
     await _db.collection('rooms').doc(roomId).update({
       'messageCount': FieldValue.increment(1),
     });

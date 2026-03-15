@@ -42,6 +42,13 @@ class EventService {
     await _db.collection('events').doc(event.id).set(event.toMap());
   }
 
+  /// Delete an event (Organizer only)
+  Future<void> deleteEvent(String eventId) async {
+    // 1. In a production app, you might want to handle refunds for ticket holders here
+    // 2. Delete the event document
+    await _db.collection('events').doc(eventId).delete();
+  }
+
   /// Fetch events created by a specific organizer
   Future<List<SocialEvent>> getMyEvents(String userId) async {
     try {
