@@ -6,8 +6,8 @@ import '../../models/user_profile.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_button_styles.dart';
-import '../../services/mock_data_service.dart';
 import '../../services/image_upload_service.dart';
+import '../../services/app_config_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final Function(UserProfile) onComplete;
@@ -38,12 +38,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Gender _partner2Gender = Gender.Male;
   DateTime? _dob;
   DateTime? _partner2Dob;
-  String _city = MockDataService.pakistaniCities[0];
+  String _country = 'Pakistan';
+  String _city = AppConfigService.fallbackPakistaniCities[0];
   String _bio = '';
   List<String> _interests = [];
   bool _isCouple = false;
   String _photo = 'https://picsum.photos/id/64/800/1200';
   final ImagePicker _picker = ImagePicker();
+  final AppConfigService _configService = AppConfigService();
 
   Future<void> _handleNext() async {
     if (_step == 1) {
@@ -81,6 +83,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           partner2Gender: _isCouple ? _partner2Gender : null,
           dob: _dob!.toIso8601String(),
           partner2Dob: _isCouple ? _partner2Dob!.toIso8601String() : null,
+          country: _country,
           location: _city,
           bio: _bio,
           interests: _interests,
@@ -338,7 +341,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text('Vibe Check',
               style: AppTextStyles.h1.copyWith(color: AppColors.textMain)),
           const SizedBox(height: 32),
-          Text('CURRENT CITY',
+          Text('CURRENT COUNTRY',
               style: AppTextStyles.label.copyWith(
                   color: AppColors.textExtraLight, letterSpacing: 2.0)),
           const SizedBox(height: 12),
@@ -349,10 +352,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 borderRadius: BorderRadius.circular(20)),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: _city,
+                value: _country,
                 isExpanded: true,
-                onChanged: (v) => setState(() => _city = v!),
-                items: MockDataService.pakistaniCities
+                onChanged: (v) => setState(() => _country = v!),
+                items: ['Pakistan', 'India', 'United Arab Emirates', 'United States', 'United Kingdom', 'Canada']
                     .map((c) => DropdownMenuItem(
                         value: c,
                         child: Text(c,
@@ -361,6 +364,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 color: AppColors.textMain))))
                     .toList(),
               ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Text('CURRENT CITY',
+              style: AppTextStyles.label.copyWith(
+                  color: AppColors.textExtraLight, letterSpacing: 2.0)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(20)),
+            child: StreamBuilder<List<String>>(
+              stream: _configService.streamPakistaniCities(),
+              builder: (context, snapshot) {
+                final cities = snapshot.data ?? AppConfigService.fallbackPakistaniCities;
+                if (!cities.contains(_city) && cities.isNotEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _city = cities[0]);
+                  });
+                }
+                return DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: cities.contains(_city) ? _city : (cities.isNotEmpty ? cities[0] : _city),
+                    isExpanded: true,
+                    onChanged: (v) => setState(() => _city = v!),
+                    items: cities
+                        .map((c) => DropdownMenuItem(
+                            value: c,
+                            child: Text(c,
+                                style: AppTextStyles.body.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textMain))))
+                        .toList(),
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(height: 32),

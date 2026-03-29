@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:milap/models/message.dart';
 import 'package:milap/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -25,19 +26,6 @@ class ActiveRoomScreen extends StatefulWidget {
 class _ActiveRoomScreenState extends State<ActiveRoomScreen> {
   final TextEditingController _messageController = TextEditingController();
   final RoomService _roomService = RoomService();
-  bool _isAccepted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final currentUser = Provider.of<UserProvider>(context, listen: false).user;
-    if (currentUser != null) {
-      if (widget.room.participants.any((p) => p.userId == currentUser.id) ||
-          currentUser.id == widget.room.hostId) {
-        _isAccepted = true;
-      }
-    }
-  }
 
   @override
   void dispose() {
@@ -45,46 +33,12 @@ class _ActiveRoomScreenState extends State<ActiveRoomScreen> {
     super.dispose();
   }
 
-  void _sendMessage(String currentUserId, String userName, String userAvatar) async {
+  void _sendMessage(String currentUserId, String userName) {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    final message = RoomMessage(
-      id: '',
-      roomId: widget.room.id,
-      senderId: currentUserId,
-      senderName: userName,
-      senderAvatar: userAvatar,
-      message: text,
-      timestamp: DateTime.now(),
-    );
-
-    await _roomService.sendMessage(widget.room.id, message);
+    _roomService.sendMessage(widget.room.id, currentUserId, userName, text);
     _messageController.clear();
-  }
-
-  void _handleDeleteRoom() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.milapPlusSurface,
-        title: const Text('Delete Room?', style: TextStyle(color: Colors.white)),
-        content: const Text('This will permanently close the room and delete all messages.', style: TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('DELETE', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await _roomService.deleteRoom(widget.room.id);
-      widget.onLeave();
-    }
   }
 
   @override
@@ -96,7 +50,7 @@ class _ActiveRoomScreenState extends State<ActiveRoomScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    final isHost = user.id == widget.room.hostId;
+    final isHost = user.id == widget.room.creatorId;
 
     final primaryColor = AppColors.milapPlusPrimary;
     final backgroundColor = AppColors.milapPlusSecondary;
@@ -108,19 +62,12 @@ class _ActiveRoomScreenState extends State<ActiveRoomScreen> {
       child: Scaffold(
         backgroundColor: backgroundColor,
         appBar: _buildAppBar(isHost, primaryColor, textColor),
-        body: Stack(
+        body: Column(
           children: [
-            Column(
-              children: [
-                Expanded(child: _buildChatUI(user.id, primaryColor, surfaceColor, textColor)),
-              ],
-            ),
-            if (!_isAccepted && !isHost) _buildPendingOverlay(primaryColor),
+            Expanded(child: _buildChatUI(user.id, primaryColor, surfaceColor, textColor)),
           ],
         ),
-        bottomNavigationBar: (isHost || _isAccepted)
-            ? _buildChatInput(user, primaryColor, surfaceColor, textColor)
-            : _buildRestrictedFooter(primaryColor),
+        bottomNavigationBar: _buildChatInput(user, primaryColor, surfaceColor, textColor),
       ),
     );
   }
@@ -138,27 +85,25 @@ class _ActiveRoomScreenState extends State<ActiveRoomScreen> {
         icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 16),
       ),
       title: Text(widget.room.name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
-      actions: [
-        if (isHost) 
-          PopupMenuButton<String>(
-            icon: Icon(Icons.admin_panel_settings_rounded, color: primary),
-            onSelected: (val) {
-              if (val == 'delete') _handleDeleteRoom();
-            },
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(value: 'delete', child: Text('Delete Room', style: TextStyle(color: Colors.red))),
-            ],
-          ),
-      ],
     );
   }
 
   Widget _buildChatUI(String currentUserId, Color primary, Color surface, Color text) {
-    return StreamBuilder<List<RoomMessage>>(
-      stream: _roomService.streamRoomMessages(widget.room.id),
+    return StreamBuilder<List<Message>>(
+      stream: _roomService.getMessages(widget.room.id),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-        final messages = snapshot.data ?? [];
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(
+            child: Text(
+              'No messages yet.',
+              style: TextStyle(color: Colors.white38),
+            ),
+          );
+        }
+        final messages = snapshot.data!;
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           reverse: true,
@@ -169,7 +114,7 @@ class _ActiveRoomScreenState extends State<ActiveRoomScreen> {
     );
   }
 
-  Widget _buildBubble(RoomMessage msg, String currentUserId, Color primary, Color surface) {
+  Widget _buildBubble(Message msg, String currentUserId, Color primary, Color surface) {
     final bool isMe = msg.senderId == currentUserId;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -185,9 +130,9 @@ class _ActiveRoomScreenState extends State<ActiveRoomScreen> {
             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               if (!isMe) Text(msg.senderName, style: const TextStyle(fontSize: 10, color: Colors.white54, fontWeight: FontWeight.bold)),
-              Text(msg.message, style: TextStyle(color: isMe ? Colors.black : Colors.white)),
+              Text(msg.text, style: TextStyle(color: isMe ? Colors.black : Colors.white)),
               const SizedBox(height: 4),
-              Text(DateFormat('hh:mm a').format(msg.timestamp), style: TextStyle(fontSize: 8, color: isMe ? Colors.black54 : Colors.white38)),
+              Text(DateFormat('hh:mm a').format(msg.timestamp.toDate()), style: TextStyle(fontSize: 8, color: isMe ? Colors.black54 : Colors.white38)),
             ],
           ),
         ),
@@ -218,57 +163,11 @@ class _ActiveRoomScreenState extends State<ActiveRoomScreen> {
           ),
           const SizedBox(width: 12),
           GestureDetector(
-            onTap: () => _sendMessage(user.id, user.name, user.photos.isNotEmpty ? user.photos[0] : ''),
+            onTap: () => _sendMessage(user.id, user.name),
             child: CircleAvatar(
               backgroundColor: primary,
               child: const Icon(Icons.send_rounded, color: Colors.black),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPendingOverlay(Color primary) {
-    return Container(
-      color: Colors.black.withOpacity(0.7),
-      width: double.infinity,
-      height: double.infinity,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.hourglass_empty_rounded, color: primary, size: 64),
-            const SizedBox(height: 24),
-            Text('WAITING FOR APPROVAL', style: AppTextStyles.h3.copyWith(color: Colors.white)),
-            const SizedBox(height: 12),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                'The room owner or moderator needs to accept your request before you can interact.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white60, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRestrictedFooter(Color primary) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.milapPlusSurface,
-        border: const Border(top: BorderSide(color: Colors.white10)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline_rounded, color: primary, size: 20),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text('Chat and interaction restricted until accepted.', style: TextStyle(color: Colors.white54, fontSize: 12)),
           ),
         ],
       ),

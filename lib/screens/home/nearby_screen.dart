@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/user_profile.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/user_service.dart';
 
 class NearbyScreen extends StatefulWidget {
   final UserProfile user;
@@ -18,15 +18,10 @@ class NearbyScreen extends StatefulWidget {
 
 class _NearbyScreenState extends State<NearbyScreen> {
   String _viewMode = 'map'; // 'map' | 'list'
+  final UserService _userService = UserService();
 
   @override
   Widget build(BuildContext context) {
-    final filteredProfiles = MockDataService()
-        .getSocialFeed()
-        .where((p) => (widget.user.blockedUserIds == null ||
-            !widget.user.blockedUserIds!.contains(p.id)))
-        .toList();
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
@@ -89,9 +84,27 @@ class _NearbyScreenState extends State<NearbyScreen> {
               Expanded(
                 child: _viewMode == 'map'
                     ? _buildIncognitoView()
-                    : (_viewMode == 'map'
-                        ? _buildMapView()
-                        : _buildListView(filteredProfiles)),
+                    : StreamBuilder<List<UserProfile>>(
+                        stream: _userService.streamSocialFeed(
+                          preferredCity: widget.user.location,
+                          excludeUid: widget.user.id,
+                        ),
+                        builder: (context, snapshot) {
+                          final blocked = widget.user.blockedUserIds ?? const <String>[];
+                          final filteredProfiles = (snapshot.data ?? const <UserProfile>[])
+                              .where((p) => !blocked.contains(p.id))
+                              .toList();
+
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          if (snapshot.hasError) {
+                            return Center(child: Text('Error: ${snapshot.error}'));
+                          }
+
+                          return _buildListView(filteredProfiles);
+                        },
+                      ),
               ),
             ],
           ),

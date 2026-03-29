@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/social_event.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_button_styles.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/event_service.dart';
+import '../../providers/user_provider.dart';
 
 class MyEventsScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -23,11 +25,14 @@ class MyEventsScreen extends StatefulWidget {
 
 class _MyEventsScreenState extends State<MyEventsScreen> {
   String _activeTab = 'Upcoming';
-  final List<SocialEvent> _myEvents = MockDataService().getMockEvents();
+  final EventService _eventService = EventService();
 
   @override
   Widget build(BuildContext context) {
-    final filteredEvents = _activeTab == 'Upcoming' ? _myEvents : [];
+    final user = Provider.of<UserProvider>(context).user;
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF111111),
@@ -125,10 +130,19 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
 
               // Event List
               Expanded(
-                child: filteredEvents.isEmpty
-                    ? Center(
-                        child:
-                            Column(mainAxisSize: MainAxisSize.min, children: [
+                child: StreamBuilder<List<SocialEvent>>(
+                  stream: _eventService.streamMyEvents(user.id),
+                  builder: (context, snapshot) {
+                    final myEvents = snapshot.data ?? const <SocialEvent>[];
+                    final filteredEvents = _activeTab == 'Upcoming' ? myEvents : const <SocialEvent>[];
+
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (filteredEvents.isEmpty) {
+                      return Center(
+                          child: Column(mainAxisSize: MainAxisSize.min, children: [
                         const Text('📭', style: TextStyle(fontSize: 48)),
                         const SizedBox(height: 16),
                         Text('NO EVENTS FOUND',
@@ -136,15 +150,19 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
                                 color: Colors.white.withOpacity(0.3),
                                 fontSize: 10,
                                 letterSpacing: 2.0))
-                      ]))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(24),
-                        itemCount: filteredEvents.length,
-                        itemBuilder: (context, index) {
-                          final event = filteredEvents[index];
-                          return _buildEventCard(event);
-                        },
-                      ),
+                      ]));
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(24),
+                      itemCount: filteredEvents.length,
+                      itemBuilder: (context, index) {
+                        final event = filteredEvents[index];
+                        return _buildEventCard(event);
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),

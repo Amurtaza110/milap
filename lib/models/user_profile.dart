@@ -323,6 +323,9 @@ class UserProfile {
   final List<String>? blockedUserIds;
   final StatusPrivacy? statusPrivacy;
 
+  // Country Discovery
+  final String? country;
+
   // Economy
   final int heartsBalance;
   final String lastHeartRefill;
@@ -340,6 +343,8 @@ class UserProfile {
   final int? suspendedUntil;
   final bool? privacyGuardEnabled;
   final String? appPin;
+  final bool notificationsEnabled;
+  final bool notificationsMuted;
 
   UserProfile({
     required this.id,
@@ -374,6 +379,7 @@ class UserProfile {
     required this.isDeactivated,
     this.blockedUserIds,
     this.statusPrivacy,
+    this.country,
     required this.heartsBalance,
     required this.lastHeartRefill,
     this.relationship,
@@ -384,6 +390,8 @@ class UserProfile {
     this.suspendedUntil,
     this.privacyGuardEnabled,
     this.appPin,
+    this.notificationsEnabled = true,
+    this.notificationsMuted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -420,6 +428,7 @@ class UserProfile {
       'isDeactivated': isDeactivated,
       'blockedUserIds': blockedUserIds,
       'statusPrivacy': statusPrivacy?.toMap(),
+      'country': country,
       'heartsBalance': heartsBalance,
       'lastHeartRefill': lastHeartRefill,
       'relationship': relationship?.toMap(),
@@ -430,6 +439,8 @@ class UserProfile {
       'suspendedUntil': suspendedUntil,
       'privacyGuardEnabled': privacyGuardEnabled,
       'appPin': appPin,
+      'notificationsEnabled': notificationsEnabled,
+      'notificationsMuted': notificationsMuted,
     };
   }
 
@@ -486,6 +497,7 @@ class UserProfile {
       statusPrivacy: map['statusPrivacy'] != null
           ? StatusPrivacy.fromMap(map['statusPrivacy'])
           : null,
+      country: map['country'],
       heartsBalance: map['heartsBalance'] ?? 0,
       lastHeartRefill: map['lastHeartRefill'] ?? '',
       relationship: map['relationship'] != null
@@ -506,6 +518,8 @@ class UserProfile {
       suspendedUntil: map['suspendedUntil'],
       privacyGuardEnabled: map['privacyGuardEnabled'],
       appPin: map['appPin'],
+      notificationsEnabled: map['notificationsEnabled'] ?? true,
+      notificationsMuted: map['notificationsMuted'] ?? false,
     );
   }
 
@@ -541,6 +555,7 @@ class UserProfile {
     bool? isDeactivated,
     List<String>? blockedUserIds,
     StatusPrivacy? statusPrivacy,
+    String? country,
     int? heartsBalance,
     String? lastHeartRefill,
     Relationship? relationship,
@@ -551,6 +566,8 @@ class UserProfile {
     int? suspendedUntil,
     bool? privacyGuardEnabled,
     String? appPin,
+    bool? notificationsEnabled,
+    bool? notificationsMuted,
   }) {
     return UserProfile(
       id: id,
@@ -585,6 +602,7 @@ class UserProfile {
       isDeactivated: isDeactivated ?? this.isDeactivated,
       blockedUserIds: blockedUserIds ?? this.blockedUserIds,
       statusPrivacy: statusPrivacy ?? this.statusPrivacy,
+      country: country ?? this.country,
       heartsBalance: heartsBalance ?? this.heartsBalance,
       lastHeartRefill: lastHeartRefill ?? this.lastHeartRefill,
       relationship: relationship ?? this.relationship,
@@ -595,6 +613,8 @@ class UserProfile {
       suspendedUntil: suspendedUntil ?? this.suspendedUntil,
       privacyGuardEnabled: privacyGuardEnabled ?? this.privacyGuardEnabled,
       appPin: appPin ?? this.appPin,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      notificationsMuted: notificationsMuted ?? this.notificationsMuted,
     );
   }
 }

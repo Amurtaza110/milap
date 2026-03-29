@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/user_profile.dart';
-import '../../services/mock_data_service.dart';
 import '../../services/image_upload_service.dart';
+import '../../services/app_config_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_button_styles.dart';
@@ -29,6 +29,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _bioController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   final ImageUploadService _uploadService = ImageUploadService();
+  final AppConfigService _configService = AppConfigService();
   bool _isSaving = false;
 
   @override
@@ -207,17 +208,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(20)),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _formData.location,
-                      isExpanded: true,
-                      onChanged: (v) => setState(() => _formData = _formData.copyWith(location: v)),
-                      items: MockDataService.pakistaniCities
-                          .map((c) => DropdownMenuItem(
-                              value: c,
-                              child: Text(c, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textMain))))
-                          .toList(),
-                    ),
+                  child: StreamBuilder<List<String>>(
+                    stream: _configService.streamPakistaniCities(),
+                    builder: (context, snapshot) {
+                      final cities = snapshot.data ?? AppConfigService.fallbackPakistaniCities;
+                      final value = cities.contains(_formData.location) ? _formData.location : (cities.isNotEmpty ? cities[0] : _formData.location);
+                      return DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: value,
+                          isExpanded: true,
+                          onChanged: (v) => setState(() => _formData = _formData.copyWith(location: v)),
+                          items: cities
+                              .map((c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(c, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textMain))))
+                              .toList(),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 32),

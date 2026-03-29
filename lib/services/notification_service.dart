@@ -1,14 +1,41 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/notification.dart';
+import 'package:milap/models/notification.dart';
 
 class NotificationService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final CollectionReference _usersCollection = FirebaseFirestore.instance.collection('users');
 
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  /// Create a new notification in Firestore
+  final StreamController<AppNotification> _localUiStreamController =
+      StreamController<AppNotification>.broadcast();
+
+  Stream<AppNotification> get localUiStream => _localUiStreamController.stream;
+
+  Stream<List<AppNotification>> getNotifications(String userId) {
+    return _usersCollection
+        .doc(userId)
+        .collection('notifications')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => AppNotification.fromMap(doc.data() as Map<String, dynamic>)).toList();
+    });
+  }
+
+  Future<void> markAsRead(String userId, String notificationId) {
+    return _usersCollection
+        .doc(userId)
+        .collection('notifications')
+        .doc(notificationId)
+        .update({'isRead': true});
+  }
+
+  /// $0-cost in-app notification: writes directly to Firestore.
+  ///
+  /// Stored under: `users/{receiverId}/notifications/{id}`
   Future<void> sendNotification({
     required String receiverId,
     required NotificationType type,
@@ -16,56 +43,28 @@ class NotificationService {
     required String message,
     String? senderId,
     String? senderPhoto,
+    String? imageUrl,
   }) async {
     try {
-      final docRef = _db.collection('notifications').doc();
-      await docRef.set({
-        'id': docRef.id,
-        'type': type.name,
-        'title': title,
-        'message': message,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-        'isRead': false,
-        'senderId': senderId,
-        'senderPhoto': senderPhoto,
-        'receiverId': receiverId,
-      });
+      final docRef =
+          _usersCollection.doc(receiverId).collection('notifications').doc();
+
+      final notification = AppNotification(
+        id: docRef.id,
+        type: type,
+        title: title,
+        message: message,
+        imageUrl: imageUrl,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        isRead: false,
+        senderId: senderId,
+        senderPhoto: senderPhoto,
+      );
+
+      await docRef.set(notification.toMap());
+      _localUiStreamController.add(notification);
     } catch (e) {
-      print('NotificationService Error: $e');
+      print('Error sending notification: $e');
     }
-  }
-
-  /// Real-time stream of notifications for a specific user
-  Stream<List<NotificationModel>> streamNotifications(String userId) {
-    return _db
-        .collection('notifications')
-        .where('receiverId', isEqualTo: userId)
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs.map((doc) {
-              final data = doc.data();
-              return NotificationModel(
-                id: data['id'],
-                type: NotificationType.values.firstWhere(
-                    (e) => e.name == data['type'],
-                    orElse: () => NotificationType.system),
-                title: data['title'],
-                message: data['message'],
-                timestamp: data['timestamp'],
-                isRead: data['isRead'],
-                senderId: data['senderId'],
-                senderPhoto: data['senderPhoto'],
-              );
-            }).toList());
-  }
-
-  /// Mark notification as read
-  Future<void> markAsRead(String notificationId) async {
-    await _db.collection('notifications').doc(notificationId).update({'isRead': true});
-  }
-
-  /// Delete notification
-  Future<void> deleteNotification(String notificationId) async {
-    await _db.collection('notifications').doc(notificationId).delete();
   }
 }

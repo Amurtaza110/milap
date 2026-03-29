@@ -30,6 +30,7 @@ class AppIcons {
   static const IconData info = Icons.info_outline_rounded;
   static const IconData warning = Icons.warning_rounded;
   static const IconData search = Icons.search_rounded;
+  static const IconData globe = Icons.public_rounded;
   static const IconData pending = Icons.access_time_rounded;
   static const IconData accepted = Icons.check_circle_rounded;
   static const IconData cancelled = Icons.cancel_rounded;

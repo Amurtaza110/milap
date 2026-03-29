@@ -23,6 +23,6 @@ class AppRoutes {
   static const String publicProfile = '/public-profile';
   static const String sentRequests = '/sent-requests';
   static const String statusUpload = '/status-upload';
-  static const String liveStreaming = '/live-streaming';
   static const String pinLock = '/pin-lock';
+  static const String countryDiscovery = '/country-discovery';
 }

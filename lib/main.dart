@@ -10,16 +10,23 @@ import 'package:milap/screens/onboarding/onboarding_screen.dart';
 import 'package:milap/screens/onboarding/splash_screen.dart';
 import 'package:milap/screens/home/root_screen.dart';
 import 'package:milap/theme/app_theme.dart';
+import 'package:milap/services/push_notification_service.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   
-  // Activate App Check for security and faster OTP
+  // SECURE & FAST OTP FIX:
+  // Use Debug Provider for testing, Play Integrity for production
   await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.playIntegrity,
+    androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+    appleProvider: AppleProvider.deviceCheck,
   );
 
+  final pushService = PushNotificationService();
+  await pushService.initialize();
+  
   runApp(const MilapApp());
 }
 
@@ -64,12 +71,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
 
-    // Initial Loading State
     if (_showSplash || !userProvider.isInitialLoadDone) {
       return const SplashScreen();
     }
 
-    // Step 1: User is not logged in
     if (userProvider.firebaseUser == null) {
       return LoginScreen(
         onLogin: (phoneNumber) {
@@ -79,7 +84,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 phoneNumber: phoneNumber,
                 onVerify: (success) {
                   if (success) {
-                    Navigator.of(context).pop(); // Back to AuthWrapper
+                    Navigator.of(context).pop();
                   }
                 },
                 onBack: () => Navigator.of(context).pop(),
@@ -90,7 +95,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // Step 2: User is logged in but has no Firestore profile
     if (userProvider.user == null) {
       return OnboardingScreen(
         phoneNumber: userProvider.firebaseUser?.phoneNumber ?? '',
@@ -101,7 +105,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // Step 3: Fully Authenticated
+    PushNotificationService().updateToken(userProvider.user!.id);
     return const RootScreen();
   }
 }

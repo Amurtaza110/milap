@@ -62,4 +62,34 @@ class Ticket {
       qrCode: map['qrCode'] ?? '',
     );
   }
+
+  Ticket copyWith({
+    String? id,
+    String? userId,
+    String? eventId,
+    String? eventTitle,
+    String? eventDate,
+    String? eventLocation,
+    String? packageId,
+    String? packageName,
+    double? price,
+    TicketStatus? status,
+    int? timestamp,
+    String? qrCode,
+  }) {
+    return Ticket(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      eventId: eventId ?? this.eventId,
+      eventTitle: eventTitle ?? this.eventTitle,
+      eventDate: eventDate ?? this.eventDate,
+      eventLocation: eventLocation ?? this.eventLocation,
+      packageId: packageId ?? this.packageId,
+      packageName: packageName ?? this.packageName,
+      price: price ?? this.price,
+      status: status ?? this.status,
+      timestamp: timestamp ?? this.timestamp,
+      qrCode: qrCode ?? this.qrCode,
+    );
+  }
 }

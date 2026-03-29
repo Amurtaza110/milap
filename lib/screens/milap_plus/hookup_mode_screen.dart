@@ -5,8 +5,11 @@ import '../../models/user_profile.dart';
 import '../../models/enums.dart';
 import '../../models/app_screen.dart';
 import '../../providers/user_provider.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/event_service.dart';
+import '../../services/user_service.dart';
 import '../../theme/app_colors.dart';
+import '../../models/social_event.dart';
+import '../../widgets/milap_plus_swipe_card.dart';
 
 class HookupModeScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -32,6 +35,7 @@ class _HookupModeScreenState extends State<HookupModeScreen> {
   HookupIntent _selectedIntent = HookupIntent.Casual;
   String _currentTab = 'vibe'; // 'vibe' | 'room'
   bool _showVisitors = false;
+  final EventService _eventService = EventService();
 
   @override
   void initState() {
@@ -56,14 +60,14 @@ class _HookupModeScreenState extends State<HookupModeScreen> {
           ProfileVisitor(
               userId: '3',
               name: 'Hamza',
-              photo: MockDataService.mockProfiles[2].photos[0],
+              photo: 'https://picsum.photos/seed/milap-visitor-1/200/200',
               timestamp: DateTime.now()
                   .subtract(const Duration(minutes: 30))
                   .millisecondsSinceEpoch),
           ProfileVisitor(
               userId: '2',
               name: 'Zain & Sarah',
-              photo: MockDataService.mockProfiles[1].photos[0],
+              photo: 'https://picsum.photos/seed/milap-visitor-2/200/200',
               timestamp: DateTime.now()
                   .subtract(const Duration(minutes: 120))
                   .millisecondsSinceEpoch),
@@ -197,6 +201,36 @@ class _HookupModeScreenState extends State<HookupModeScreen> {
           ),
         ],
       ),
+      floatingActionButton: !_showVisitors
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/country-discovery');
+              },
+              backgroundColor: AppColors.milapPlusPrimary,
+              elevation: 8,
+              splashColor: Colors.white24,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.public_rounded,
+                  color: Colors.black,
+                  size: 28,
+                ),
+              ),
+            )
+          : null,
     );
   }
 
@@ -458,15 +492,59 @@ class _HookupModeScreenState extends State<HookupModeScreen> {
           ),
           if (user.hookupActive == true) ...[
             const SizedBox(height: 48),
-            const Text('LIVE SOULS NEARBY',
+            const Text('ELITE CONNECTIONS',
                 style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w900,
                     color: Colors.white30,
                     letterSpacing: 2.0)),
             const SizedBox(height: 16),
-            _buildNearbySoul('Secret Soul', 'Active • 200m Away'),
-            _buildNearbySoul('Hidden Gem', 'Active • 450m Away'),
+            StreamBuilder<List<UserProfile>>(
+              stream: UserService().streamMilapPlusFeed(
+                preferredCity: user.location,
+                excludeUid: user.id,
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.milapPlusPrimary),
+                  );
+                }
+                
+                final users = snapshot.data ?? [];
+                
+                if (users.isEmpty) {
+                  return MilapPlusSwipeCard(
+                    profile: null,
+                    onAction: (_) {},
+                    onViewProfile: (_) {},
+                    onBlockUser: (_) {},
+                  );
+                }
+                
+                // Show the first top rated elite user matching criteria
+                final topUser = users.first;
+                return MilapPlusSwipeCard(
+                  profile: topUser,
+                  hasStatus: false,
+                  onAction: (action) {
+                    if (action == 'match') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Sent match request to ${topUser.name}!')),
+                      );
+                    }
+                  },
+                  onViewProfile: (p) {
+                    widget.onNavigate?.call(AppScreen.PUBLIC_PROFILE_VIEW);
+                  },
+                  onBlockUser: (id) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User blocked.')),
+                    );
+                  },
+                );
+              },
+            ),
           ],
           const SizedBox(height: 24),
           const Text('GOLD EXCLUSIVE GATHERINGS',
@@ -478,56 +556,73 @@ class _HookupModeScreenState extends State<HookupModeScreen> {
           const SizedBox(height: 16),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Row(
-              children: MockDataService.mockEvents
-                  .where((e) => e.accessLevel == AccessLevel.Gold)
-                  .map((event) => Container(
-                        width: 240,
-                        height: 300,
-                        margin: const EdgeInsets.only(right: 16),
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(35),
-                            image: DecorationImage(
-                                image: NetworkImage(event.media[0]),
-                                fit: BoxFit.cover,
-                                colorFilter: ColorFilter.mode(
-                                    Colors.black.withOpacity(0.4),
-                                    BlendMode.darken)),
-                            border: Border.all(
-                                color: AppColors.milapPlusPrimary
-                                    .withOpacity(0.3))),
-                        child: Stack(
-                          children: [
-                            const Positioned(
-                                top: 16,
-                                right: 16,
-                                child:
-                                    Text('👑', style: TextStyle(fontSize: 24))),
-                            Positioned(
-                                bottom: 24,
-                                left: 24,
-                                right: 24,
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(event.title,
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w900)),
-                                      Text(
-                                          '${event.date} • ${event.location.split(',')[0]}',
-                                          style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.0)),
-                                    ])),
-                          ],
+            child: StreamBuilder(
+              stream: _eventService.streamEvents(accessLevel: AccessLevel.Gold),
+              builder: (context, snapshot) {
+                final events = (snapshot.data as List<SocialEvent>?) ?? const <SocialEvent>[];
+                return Row(
+                  children: events.map((event) {
+                    final cover = (event.media.isNotEmpty)
+                        ? event.media[0]
+                        : 'https://picsum.photos/seed/milap-gold-event/600/800';
+                    return Container(
+                      width: 240,
+                      height: 300,
+                      margin: const EdgeInsets.only(right: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(35),
+                        image: DecorationImage(
+                          image: NetworkImage(cover),
+                          fit: BoxFit.cover,
+                          colorFilter: ColorFilter.mode(
+                            Colors.black.withOpacity(0.4),
+                            BlendMode.darken,
+                          ),
                         ),
-                      ))
-                  .toList(),
+                        border: Border.all(
+                          color: AppColors.milapPlusPrimary.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          const Positioned(
+                            top: 16,
+                            right: 16,
+                            child: Text('👑', style: TextStyle(fontSize: 24)),
+                          ),
+                          Positioned(
+                            bottom: 24,
+                            left: 24,
+                            right: 24,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  event.title,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                Text(
+                                  '${event.date} • ${event.location.split(',')[0]}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ),
           const SizedBox(height: 100),

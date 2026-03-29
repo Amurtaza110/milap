@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase';
 import { Send, BarChart3, Bell } from 'lucide-react';
 
 export default function Marketing() {
@@ -23,6 +25,7 @@ export default function Marketing() {
             const snapshot = await getDocs(q);
             const batch = [];
 
+            // 1. Send internal in-app notifications
             snapshot.forEach((userDoc) => {
                 const notiRef = collection(db, "notifications");
                 batch.push(addDoc(notiRef, {
@@ -37,6 +40,22 @@ export default function Marketing() {
             });
 
             await Promise.all(batch);
+
+            // 2. Send actual Firebase Cloud Messaging (FCM) Push Notifications
+            try {
+                const sendPushBlast = httpsCallable(functions, 'sendPushBlast');
+                const pushTarget = target === 'Gold Members Only' ? 'milap_plus' : 'all';
+                const result = await sendPushBlast({
+                    title: title,
+                    message: message,
+                    target: pushTarget
+                });
+                console.log("Push Result:", result.data);
+            } catch (err) {
+                console.error("FCM Push failed:", err);
+                // We don't block the UI success if just the push fails, but we log it.
+            }
+
             alert(`Blast sent to ${snapshot.size} users!`);
             setTitle('');
             setMessage('');

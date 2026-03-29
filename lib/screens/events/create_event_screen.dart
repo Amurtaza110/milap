@@ -8,9 +8,6 @@ import '../../models/enums.dart';
 import '../../providers/user_provider.dart';
 import '../../services/event_service.dart';
 import '../../services/image_upload_service.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_text_styles.dart';
-import '../../theme/app_icons.dart';
 
 class CreateEventScreen extends StatefulWidget {
   final VoidCallback onBack;

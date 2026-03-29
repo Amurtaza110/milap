@@ -37,6 +37,29 @@ class EventService {
     }
   }
 
+  /// Stream social events from Firestore in real-time
+  Stream<List<SocialEvent>> streamEvents({
+    EventType? category,
+    AccessLevel? accessLevel,
+    int limit = 50,
+  }) {
+    Query query = _db.collection('events');
+
+    if (category != null) {
+      query = query.where('eventType', isEqualTo: category.index);
+    }
+
+    if (accessLevel != null) {
+      query = query.where('accessLevel', isEqualTo: accessLevel.index);
+    }
+
+    return query.orderBy('date').limit(limit).snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => SocialEvent.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
   /// Create a new event (Milap+ feature)
   Future<void> createEvent(SocialEvent event) async {
     await _db.collection('events').doc(event.id).set(event.toMap());
@@ -44,8 +67,6 @@ class EventService {
 
   /// Delete an event (Organizer only)
   Future<void> deleteEvent(String eventId) async {
-    // 1. In a production app, you might want to handle refunds for ticket holders here
-    // 2. Delete the event document
     await _db.collection('events').doc(eventId).delete();
   }
 
@@ -63,6 +84,17 @@ class EventService {
       print('Error fetching my events: $e');
       return [];
     }
+  }
+
+  /// Stream events created by a specific organizer in real-time
+  Stream<List<SocialEvent>> streamMyEvents(String userId) {
+    return _db
+        .collection('events')
+        .where('organizerId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => SocialEvent.fromMap(doc.data() as Map<String, dynamic>))
+            .toList());
   }
 
   /// Stream tickets for a specific user
@@ -114,6 +146,35 @@ class EventService {
     } catch (e) {
       print('Error booking event: $e');
       return false;
+    }
+  }
+
+  /// MISSING FUNCTIONALITY: Verify a ticket by QR code string (Organizer side)
+  Future<Ticket?> verifyTicket(String qrCodeString, String eventId) async {
+    try {
+      final snapshot = await _db
+          .collection('tickets')
+          .where('qrCode', isEqualTo: qrCodeString)
+          .where('eventId', isEqualTo: eventId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+
+      final ticketDoc = snapshot.docs.first;
+      final ticket = Ticket.fromMap(ticketDoc.data());
+
+      if (ticket.status == TicketStatus.used) {
+        throw Exception('Ticket has already been scanned and used.');
+      }
+
+      // Mark as used
+      await ticketDoc.reference.update({'status': TicketStatus.used.name});
+      
+      return ticket.copyWith(status: TicketStatus.used);
+    } catch (e) {
+      print('Ticket Verification Error: $e');
+      rethrow;
     }
   }
 }

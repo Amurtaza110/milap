@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/user_profile.dart';
 import '../../models/app_screen.dart';
 import '../../providers/user_provider.dart';
-import '../../services/mock_data_service.dart';
+import '../../services/user_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_icons.dart';
 import '../../theme/app_text_styles.dart';
@@ -37,8 +37,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isMenuOpen = false;
   bool _showPrivacyModal = false;
   String _privacyTab = 'hide'; // 'hide' | 'share'
-  bool _showActionSheet = false;
-  String _viewingMode = 'none'; // 'none' | 'story' | 'photo'
+  final UserService _userService = UserService();
+  List<UserProfile> _connections = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConnections();
+  }
+
+  Future<void> _loadConnections() async {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    if (user == null) return;
+    final result =
+        await _userService.getSocialFeed(preferredCity: user.location, excludeUid: user.id);
+    if (!mounted) return;
+    setState(() => _connections = result);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (user == null) return const Center(child: CircularProgressIndicator());
 
-    final connections =
-        MockDataService.mockProfiles.where((p) => p.id != user.id).toList();
+    final connections = _connections.where((p) => p.id != user.id).toList();
     final allMedia = [
       ...user.photos.map((url) => {
             'url': url,
@@ -147,8 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   shape: BoxShape.circle),
                               child: Opacity(opacity: 0.3, child: Container())),
                           GestureDetector(
-                            onTap: () =>
-                                setState(() => _showActionSheet = true),
+                            onTap: () {},
                             child: Container(
                               width: 150,
                               height: 150,
@@ -531,6 +544,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   user.copyWith(lookingForDates: v))),
                         ]),
                         _buildMenuSection('SECURITY', [
+                          _buildSwitchItem(
+                              AppIcons.notifications,
+                              'Mute Notifications',
+                              user.notificationsMuted,
+                              (v) => provider.updateUser(
+                                  user.copyWith(notificationsMuted: v))),
+                          _buildSwitchItem(
+                              AppIcons.lock,
+                              'Security Alerts',
+                              user.notificationsEnabled,
+                              (v) => provider.updateUser(
+                                  user.copyWith(notificationsEnabled: v))),
                           _buildMenuItem(AppIcons.privacy, 'Status Privacy',
                               onTap: () {
                             setState(() {

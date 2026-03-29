@@ -69,26 +69,16 @@ class VaultSharingService {
 
   /// Report a screenshot attempt on shared content
   Future<void> reportScreenshot(String shareId, String takerId, String ownerId) async {
-    final batch = _db.batch();
-    
-    // 1. Increment screenshot count
-    batch.update(_db.collection('vault_shares').doc(shareId), {
+    await _db.collection('vault_shares').doc(shareId).update({
       'screenshotCount': FieldValue.increment(1),
     });
 
-    // 2. Notify owner
-    final notiRef = _db.collection('notifications').doc();
-    batch.set(notiRef, {
-      'id': notiRef.id,
-      'receiverId': ownerId,
-      'type': 'security',
-      'title': 'Security Alert!',
-      'message': 'Someone attempted a screenshot of your private content.',
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-      'isRead': false,
-      'senderId': takerId,
-    });
-
-    await batch.commit();
+    await _notificationService.sendNotification(
+      receiverId: ownerId,
+      type: NotificationType.security,
+      title: 'Security Alert!',
+      message: 'Someone attempted a screenshot of your private content.',
+      senderId: takerId,
+    );
   }
 }

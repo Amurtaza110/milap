@@ -31,6 +31,9 @@ import '../events/my_events_screen.dart';
 import '../events/tickets_screen.dart';
 import '../events/event_ticket_management_screen.dart';
 import '../../services/screenshot_detection_service.dart';
+import '../../services/notification_service.dart';
+import '../../models/notification.dart';
+import '../../widgets/floating_notification_bar.dart';
 
 class RootScreen extends StatefulWidget {
   const RootScreen({Key? key}) : super(key: key);
@@ -373,6 +376,33 @@ class _RootScreenState extends State<RootScreen> with WidgetsBindingObserver {
                 activeScreen: _currentScreen,
                 onNavigate: _navigateTo,
               ),
+            ),
+          if (user.notificationsMuted == false)
+            StreamBuilder<AppNotification>(
+              stream: NotificationService().localUiStream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data == null) {
+                  return const SizedBox.shrink();
+                }
+
+                final notif = snapshot.data!;
+
+                return Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: FloatingNotificationBar(
+                    title: notif.title,
+                    message: notif.message,
+                    type: notif.type == NotificationType.match ? 'proposal' : 'system',
+                    onDismiss: () {
+                      // Handled internally by the widget, usually just hides it.
+                      // If we wanted to clear the stream, we'd need a way to emit 'null', 
+                      // but it's fine since it auto-dismisses.
+                    },
+                  ),
+                );
+              },
             ),
         ],
       ),
