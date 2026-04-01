@@ -66,10 +66,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } else {
       setState(() => _isSaving = true);
       try {
-        // Step 1: Upload Photo to Firebase Storage (Real user ready)
+        // Step 1: Upload Photo to Firebase Storage
         String photoUrl = _photo;
         if (!_photo.startsWith('http')) {
-           photoUrl = await _uploadService.uploadImage(_photo, 'profiles');
+           try {
+             photoUrl = await _uploadService.uploadImage(_photo, 'profiles');
+           } catch (uploadError) {
+             debugPrint("Upload failed: $uploadError");
+             _showError("Failed to upload profile picture. Please check your connection.");
+             setState(() => _isSaving = false);
+             return;
+           }
         }
 
         // Step 2: Create Profile Object
@@ -99,10 +106,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           isDeactivated: false,
           heartsBalance: 10,
           lastHeartRefill: DateTime.now().toIso8601String().split('T')[0],
+          notificationsEnabled: true,
         );
 
         widget.onComplete(userProfile);
       } catch (e) {
+        debugPrint("Save Profile Error: $e");
         _showError("Failed to save profile. Please try again.");
       } finally {
         if (mounted) setState(() => _isSaving = false);
@@ -139,7 +148,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: Container(
                         height: 6,
                         decoration: BoxDecoration(
-                          color: AppColors.background,
+                          color: AppColors.background.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: FractionallySizedBox(

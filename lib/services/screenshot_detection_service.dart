@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'user_service.dart';
 import 'notification_service.dart';
 import '../models/notification.dart';
 
@@ -12,7 +11,6 @@ class ScreenshotDetectionService {
 
   final _screenshotController = StreamController<ScreenshotEvent>.broadcast();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final UserService _userService = UserService();
   final NotificationService _notificationService = NotificationService();
 
   bool _isMonitoring = false;

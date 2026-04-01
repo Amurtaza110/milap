@@ -242,7 +242,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
 
   void _handleJoinRoom(Room room, String currentUserId) async {
     if (!room.members.contains(currentUserId)) {
-      await _roomService.joinRoom(room.id, currentUserId);
+      await _roomService.joinRoom(room.id, RoomParticipant(userId: currentUserId, name: '', avatar: '', joinedAt: DateTime.now(), isModerator: false));
     }
     widget.onJoinRoom(room.id, room);
   }

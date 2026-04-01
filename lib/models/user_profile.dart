@@ -299,6 +299,7 @@ class UserProfile {
   final Gender? partner2Gender;
   final String dob;
   final String? partner2Dob;
+  final String country;
   final String location;
   final String bio;
   final List<String> interests;
@@ -322,9 +323,6 @@ class UserProfile {
   final bool isDeactivated;
   final List<String>? blockedUserIds;
   final StatusPrivacy? statusPrivacy;
-
-  // Country Discovery
-  final String? country;
 
   // Economy
   final int heartsBalance;
@@ -356,6 +354,7 @@ class UserProfile {
     this.partner2Gender,
     required this.dob,
     this.partner2Dob,
+    required this.country,
     required this.location,
     required this.bio,
     required this.interests,
@@ -379,7 +378,6 @@ class UserProfile {
     required this.isDeactivated,
     this.blockedUserIds,
     this.statusPrivacy,
-    this.country,
     required this.heartsBalance,
     required this.lastHeartRefill,
     this.relationship,
@@ -405,6 +403,7 @@ class UserProfile {
       'partner2Gender': partner2Gender?.index,
       'dob': dob,
       'partner2Dob': partner2Dob,
+      'country': country,
       'location': location,
       'bio': bio,
       'interests': interests,
@@ -428,7 +427,6 @@ class UserProfile {
       'isDeactivated': isDeactivated,
       'blockedUserIds': blockedUserIds,
       'statusPrivacy': statusPrivacy?.toMap(),
-      'country': country,
       'heartsBalance': heartsBalance,
       'lastHeartRefill': lastHeartRefill,
       'relationship': relationship?.toMap(),
@@ -457,6 +455,7 @@ class UserProfile {
           : null,
       dob: map['dob'] ?? '',
       partner2Dob: map['partner2Dob'],
+      country: map['country'] ?? '',
       location: map['location'] ?? '',
       bio: map['bio'] ?? '',
       interests: List<String>.from(map['interests'] ?? []),
@@ -497,7 +496,6 @@ class UserProfile {
       statusPrivacy: map['statusPrivacy'] != null
           ? StatusPrivacy.fromMap(map['statusPrivacy'])
           : null,
-      country: map['country'],
       heartsBalance: map['heartsBalance'] ?? 0,
       lastHeartRefill: map['lastHeartRefill'] ?? '',
       relationship: map['relationship'] != null
@@ -532,6 +530,7 @@ class UserProfile {
     Gender? partner2Gender,
     String? dob,
     String? partner2Dob,
+    String? country,
     String? location,
     String? bio,
     List<String>? interests,
@@ -555,7 +554,6 @@ class UserProfile {
     bool? isDeactivated,
     List<String>? blockedUserIds,
     StatusPrivacy? statusPrivacy,
-    String? country,
     int? heartsBalance,
     String? lastHeartRefill,
     Relationship? relationship,
@@ -579,6 +577,7 @@ class UserProfile {
       partner2Gender: partner2Gender ?? this.partner2Gender,
       dob: dob ?? this.dob,
       partner2Dob: partner2Dob ?? this.partner2Dob,
+      country: country ?? this.country,
       location: location ?? this.location,
       bio: bio ?? this.bio,
       interests: interests ?? this.interests,
@@ -602,7 +601,6 @@ class UserProfile {
       isDeactivated: isDeactivated ?? this.isDeactivated,
       blockedUserIds: blockedUserIds ?? this.blockedUserIds,
       statusPrivacy: statusPrivacy ?? this.statusPrivacy,
-      country: country ?? this.country,
       heartsBalance: heartsBalance ?? this.heartsBalance,
       lastHeartRefill: lastHeartRefill ?? this.lastHeartRefill,
       relationship: relationship ?? this.relationship,

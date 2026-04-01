@@ -1,0 +1,253 @@
+﻿Analyzing Milap...                                              
+
+warning - Unused import: 'package:firebase_auth/firebase_auth.dart' - lib\main.dart:1:8 - unused_import
+   info - The constant name 'SPLASH' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:2:3 - constant_identifier_names
+   info - The constant name 'LOGIN' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:3:3 - constant_identifier_names
+   info - The constant name 'OTP' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:4:3 - constant_identifier_names
+   info - The constant name 'ONBOARDING' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:5:3 - constant_identifier_names
+   info - The constant name 'PIN_LOCK' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:6:3 - constant_identifier_names
+   info - The constant name 'CHANGE_PIN' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:7:3 - constant_identifier_names
+   info - The constant name 'EDIT_PROFILE' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:8:3 - constant_identifier_names
+   info - The constant name 'DASHBOARD' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:9:3 - constant_identifier_names
+   info - The constant name 'MESSAGES' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:10:3 - constant_identifier_names
+   info - The constant name 'CHAT_ROOM' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:11:3 - constant_identifier_names
+   info - The constant name 'EVENTS' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:12:3 - constant_identifier_names
+   info - The constant name 'EVENT_DETAILS' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:13:3 - constant_identifier_names
+   info - The constant name 'EVENT_BOOKING' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:14:3 - constant_identifier_names
+   info - The constant name 'CREATE_EVENT' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:15:3 - constant_identifier_names
+   info - The constant name 'MY_EVENTS' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:16:3 - constant_identifier_names
+   info - The constant name 'MY_TICKETS' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:17:3 - constant_identifier_names
+   info - The constant name 'SENT_REQUESTS' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:18:3 - constant_identifier_names
+   info - The constant name 'STATUS_VIEW' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:19:3 - constant_identifier_names
+   info - The constant name 'STATUS_UPLOAD' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:20:3 - constant_identifier_names
+   info - The constant name 'PROFILE' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:21:3 - constant_identifier_names
+   info - The constant name 'HOOKUP_MODE' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:22:3 - constant_identifier_names
+   info - The constant name 'ROOMS' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:23:3 - constant_identifier_names
+   info - The constant name 'CREATE_ROOM' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:24:3 - constant_identifier_names
+   info - The constant name 'ACTIVE_ROOM' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:25:3 - constant_identifier_names
+   info - The constant name 'PRIVATE_WALLET' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:26:3 - constant_identifier_names
+   info - The constant name 'NOTIFICATIONS' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:27:3 - constant_identifier_names
+   info - The constant name 'UPGRADE_GOLD' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:28:3 - constant_identifier_names
+   info - The constant name 'PUBLIC_PROFILE_VIEW' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:29:3 - constant_identifier_names
+   info - The constant name 'HEART_STORE' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:30:3 - constant_identifier_names
+   info - The constant name 'SUPPORT' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:31:3 - constant_identifier_names
+   info - The constant name 'EVENT_TICKET_MANAGEMENT' isn't a lowerCamelCase identifier - lib\models\app_screen.dart:32:3 - constant_identifier_names
+   info - The constant name 'Dance' isn't a lowerCamelCase identifier - lib\models\enums.dart:1:18 - constant_identifier_names
+   info - The constant name 'Food' isn't a lowerCamelCase identifier - lib\models\enums.dart:1:25 - constant_identifier_names
+   info - The constant name 'Chill' isn't a lowerCamelCase identifier - lib\models\enums.dart:1:31 - constant_identifier_names
+   info - The constant name 'Adventure' isn't a lowerCamelCase identifier - lib\models\enums.dart:1:38 - constant_identifier_names
+   info - The constant name 'Workshop' isn't a lowerCamelCase identifier - lib\models\enums.dart:1:49 - constant_identifier_names
+   info - The constant name 'Party' isn't a lowerCamelCase identifier - lib\models\enums.dart:1:59 - constant_identifier_names
+   info - The constant name 'Concert' isn't a lowerCamelCase identifier - lib\models\enums.dart:1:66 - constant_identifier_names
+   info - The constant name 'Indoor' isn't a lowerCamelCase identifier - lib\models\enums.dart:3:25 - constant_identifier_names
+   info - The constant name 'Outdoor' isn't a lowerCamelCase identifier - lib\models\enums.dart:3:33 - constant_identifier_names
+   info - The constant name 'Public' isn't a lowerCamelCase identifier - lib\models\enums.dart:5:20 - constant_identifier_names
+   info - The constant name 'Private' isn't a lowerCamelCase identifier - lib\models\enums.dart:5:28 - constant_identifier_names
+   info - The constant name 'Gold' isn't a lowerCamelCase identifier - lib\models\enums.dart:5:37 - constant_identifier_names
+   info - The constant name 'Male' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:1:15 - constant_identifier_names
+   info - The constant name 'Female' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:1:21 - constant_identifier_names
+   info - The constant name 'Other' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:1:29 - constant_identifier_names
+   info - The constant name 'Individual' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:3:17 - constant_identifier_names
+   info - The constant name 'Couple' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:3:29 - constant_identifier_names
+   info - The constant name 'Casual' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:5:21 - constant_identifier_names
+   info - The constant name 'Fantasies' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:5:29 - constant_identifier_names
+   info - The constant name 'Chatting' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:5:40 - constant_identifier_names
+   info - The constant name 'Secret' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:5:50 - constant_identifier_names
+   info - The constant name 'Single' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:7:27 - constant_identifier_names
+   info - The constant name 'Taken' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:7:35 - constant_identifier_names
+   info - The constant name 'Engaged' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:7:42 - constant_identifier_names
+   info - The constant name 'Married' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:7:51 - constant_identifier_names
+   info - The constant name 'Complicated' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:7:60 - constant_identifier_names
+   info - The constant name 'Pending' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:9:22 - constant_identifier_names
+   info - The constant name 'Accepted' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:9:31 - constant_identifier_names
+   info - The constant name 'Rejected' isn't a lowerCamelCase identifier - lib\models\user_profile.dart:9:41 - constant_identifier_names
+   info - Unnecessary use of double quotes - lib\providers\user_provider.dart:68:30 - prefer_single_quotes
+   info - Unnecessary use of double quotes - lib\providers\user_provider.dart:75:50 - prefer_single_quotes
+   info - Convert 'key' to a super parameter - lib\screens\auth\login_screen.dart:12:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\login_screen.dart:137:35 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\login_screen.dart:140:36 - prefer_const_constructors
+warning - Unused import: '../../services/auth_service.dart' - lib\screens\auth\otp_screen.dart:8:8 - unused_import
+   info - Convert 'key' to a super parameter - lib\screens\auth\otp_screen.dart:15:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\screens\auth\otp_screen.dart:86:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\auth\otp_screen.dart:93:28 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\otp_screen.dart:173:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\otp_screen.dart:178:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\otp_screen.dart:214:30 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\auth\pin_lock_screen.dart:13:9 - use_super_parameters
+   info - Statements in an if should be enclosed in a block - lib\screens\auth\pin_lock_screen.dart:121:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\auth\pin_lock_screen.dart:231:11 - curly_braces_in_flow_control_structures
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\pin_lock_screen.dart:234:21 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\events\create_event_screen.dart:17:9 - use_super_parameters
+   info - The private field _packageData could be 'final' - lib\screens\events\create_event_screen.dart:37:30 - prefer_final_fields
+   info - Don't use 'BuildContext's across async gaps - lib\screens\events\create_event_screen.dart:128:28 - use_build_context_synchronously
+   info - Unnecessary use of 'toList' in a spread - lib\screens\events\create_event_screen.dart:167:103 - unnecessary_to_list_in_spreads
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\create_event_screen.dart:204:26 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\screens\events\create_event_screen.dart:302:42 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\events\create_event_screen.dart:303:50 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\events\create_event_screen.dart:304:22 - curly_braces_in_flow_control_structures
+   info - Convert 'key' to a super parameter - lib\screens\events\event_booking_screen.dart:13:9 - use_super_parameters
+   info - Unnecessary use of 'toList' in a spread - lib\screens\events\event_booking_screen.dart:297:12 - unnecessary_to_list_in_spreads
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\event_booking_screen.dart:386:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\event_booking_screen.dart:423:23 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\events\event_booking_screen.dart:426:23 - prefer_const_literals_to_create_immutables
+   info - Unnecessary use of double quotes - lib\screens\events\event_booking_screen.dart:786:20 - prefer_single_quotes
+   info - Convert 'key' to a super parameter - lib\screens\events\event_details_screen.dart:15:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\events\event_screen.dart:16:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\event_screen.dart:158:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\event_screen.dart:160:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\event_screen.dart:160:40 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\events\event_ticket_management_screen.dart:12:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\event_ticket_management_screen.dart:185:25 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\events\my_events_screen.dart:15:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\events\tickets_screen.dart:13:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\tickets_screen.dart:66:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\tickets_screen.dart:187:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\tickets_screen.dart:225:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\events\tickets_screen.dart:233:31 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\home\dashboard.dart:21:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\home\nearby_screen.dart:10:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\nearby_screen.dart:38:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\nearby_screen.dart:38:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\nearby_screen.dart:53:45 - prefer_const_constructors
+   info - The declaration '_buildMapView' isn't referenced - lib\screens\home\nearby_screen.dart:174:10 - unused_element
+   info - Statements in an if should be enclosed in a block - lib\screens\home\nearby_screen.dart:211:7 - curly_braces_in_flow_control_structures
+   info - Convert 'key' to a super parameter - lib\screens\home\notification_screen.dart:12:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\home\placeholder_screen.dart:12:9 - use_super_parameters
+   info - The prefix 'Nav' isn't a lower_case_with_underscores identifier - lib\screens\home\root_screen.dart:7:43 - library_prefixes
+   info - Convert 'key' to a super parameter - lib\screens\home\root_screen.dart:39:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\home\status_upload_screen.dart:13:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\screens\home\status_upload_screen.dart:50:28 - use_build_context_synchronously
+   info - Convert 'key' to a super parameter - lib\screens\home\support_screen.dart:12:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\support_screen.dart:71:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\support_screen.dart:73:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\support_screen.dart:73:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\support_screen.dart:83:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\support_screen.dart:172:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\home\support_screen.dart:222:26 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\messages\chat_screen.dart:16:9 - use_super_parameters
+   info - Invalid use of a private type in a public API - lib\screens\messages\chat_screen.dart:19:3 - library_private_types_in_public_api
+   info - Convert 'key' to a super parameter - lib\screens\messages\messages_screen.dart:20:9 - use_super_parameters
+   info - Unnecessary use of double quotes - lib\screens\messages\messages_screen.dart:67:15 - prefer_single_quotes
+   info - Unnecessary use of double quotes - lib\screens\messages\messages_screen.dart:68:15 - prefer_single_quotes
+   info - Convert 'key' to a super parameter - lib\screens\milap_plus\country_list_screen.dart:9:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\country_list_screen.dart:101:27 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\milap_plus\country_list_screen.dart:102:39 - prefer_const_literals_to_create_immutables
+   info - Convert 'key' to a super parameter - lib\screens\milap_plus\country_users_screen.dart:13:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\milap_plus\hookup_mode_screen.dart:21:9 - use_super_parameters
+   info - Unnecessary cast - lib\screens\milap_plus\hookup_mode_screen.dart:562:33 - unnecessary_cast
+   info - The declaration '_buildNearbySoul' isn't referenced - lib\screens\milap_plus\hookup_mode_screen.dart:687:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\hookup_mode_screen.dart:750:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\hookup_mode_screen.dart:751:26 - prefer_const_constructors
+   info - The import of '../../../theme/app_colors.dart' is unnecessary because all of the used elements are also provided by the import of 'package:milap/theme/app_theme.dart' - lib\screens\milap_plus\room\active_room_screen.dart:9:8 - unnecessary_import
+warning - Unused import: '../../../theme/app_text_styles.dart' - lib\screens\milap_plus\room\active_room_screen.dart:10:8 - unused_import
+   info - Convert 'key' to a super parameter - lib\screens\milap_plus\room\active_room_screen.dart:16:9 - use_super_parameters
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\milap_plus\room\active_room_screen.dart:55:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\milap_plus\room\active_room_screen.dart:56:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\milap_plus\room\active_room_screen.dart:57:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\milap_plus\room\active_room_screen.dart:58:5 - prefer_const_declarations
+   info - Convert 'key' to a super parameter - lib\screens\milap_plus\room\chat_room.dart:19:9 - use_super_parameters
+   info - Unnecessary use of double quotes - lib\screens\milap_plus\room\chat_room.dart:159:70 - prefer_single_quotes
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\room\chat_room.dart:224:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\room\chat_room.dart:282:19 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\room\chat_room.dart:348:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\room\chat_room.dart:443:29 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\room\chat_room.dart:445:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\milap_plus\room\chat_room.dart:454:20 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\milap_plus\room\create_room_screen.dart:14:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\screens\milap_plus\room\create_room_screen.dart:60:30 - use_build_context_synchronously
+   info - Convert 'key' to a super parameter - lib\screens\milap_plus\room\rooms_screen.dart:14:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\milap_plus\upgrade_gold_screen.dart:11:9 - use_super_parameters
+   info - Unnecessary use of 'toList' in a spread - lib\screens\milap_plus\upgrade_gold_screen.dart:180:56 - unnecessary_to_list_in_spreads
+   info - Convert 'key' to a super parameter - lib\screens\onboarding\onboarding_screen.dart:17:9 - use_super_parameters
+   info - The private field _interests could be 'final' - lib\screens\onboarding\onboarding_screen.dart:44:16 - prefer_final_fields
+   info - Unnecessary use of double quotes - lib\screens\onboarding\onboarding_screen.dart:53:20 - prefer_single_quotes
+   info - Unnecessary use of double quotes - lib\screens\onboarding\onboarding_screen.dart:106:20 - prefer_single_quotes
+   info - Unnecessary use of double quotes - lib\screens\onboarding\onboarding_screen.dart:208:30 - prefer_single_quotes
+   info - Statements in an if should be enclosed in a block - lib\screens\onboarding\onboarding_screen.dart:326:17 - curly_braces_in_flow_control_structures
+   info - Convert 'key' to a super parameter - lib\screens\onboarding\splash_screen.dart:7:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\profile\edit_profile_screen.dart:15:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile\edit_profile_screen.dart:66:28 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile\edit_profile_screen.dart:83:28 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\screens\profile\edit_profile_screen.dart:120:22 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\screens\profile\edit_profile_screen.dart:171:55 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\profile\edit_profile_screen.dart:172:32 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\profile\edit_profile_screen.dart:246:37 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\profile\edit_profile_screen.dart:247:30 - curly_braces_in_flow_control_structures
+   info - Use 'const' with the constructor to improve performance - lib\screens\profile\edit_profile_screen.dart:310:148 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\profile\edit_profile_screen.dart:329:13 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\profile\profile_screen.dart:20:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\profile\profile_screen.dart:520:41 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\screens\profile\profile_screen.dart:743:31 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\profile\profile_screen.dart:745:31 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\profile\profile_screen.dart:749:31 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\profile\profile_screen.dart:751:31 - curly_braces_in_flow_control_structures
+   info - Convert 'key' to a super parameter - lib\screens\profile\public_profile_view.dart:18:9 - use_super_parameters
+   info - Unnecessary use of 'toList' in a spread - lib\screens\profile\public_profile_view.dart:462:26 - unnecessary_to_list_in_spreads
+   info - Convert 'key' to a super parameter - lib\screens\profile\sent_requests_screen.dart:13:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\profile\verification_screen.dart:14:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps - lib\screens\profile\verification_screen.dart:74:28 - use_build_context_synchronously
+   info - Convert 'key' to a super parameter - lib\screens\wallet\checkout_screen.dart:10:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\screens\wallet\heart_store_screen.dart:14:9 - use_super_parameters
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\wallet\heart_store_screen.dart:62:38 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\heart_store_screen.dart:105:33 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\screens\wallet\wallet_screen.dart:13:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:91:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:94:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:94:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:106:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:154:39 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:156:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:186:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:206:27 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\screens\wallet\wallet_screen.dart:261:11 - curly_braces_in_flow_control_structures
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:263:21 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\screens\wallet\wallet_screen.dart:266:11 - curly_braces_in_flow_control_structures
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:268:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:315:17 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\wallet\wallet_screen.dart:350:22 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\wallet\wallet_screen.dart:470:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\wallet\wallet_screen.dart:480:40 - use_build_context_synchronously
+   info - Don't invoke 'print' in production code - lib\services\country_discovery_service.dart:63:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\country_discovery_service.dart:88:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\event_service.dart:35:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\event_service.dart:84:7 - avoid_print
+   info - Unnecessary cast - lib\services\event_service.dart:96:47 - unnecessary_cast
+   info - Don't invoke 'print' in production code - lib\services\event_service.dart:147:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\event_service.dart:176:7 - avoid_print
+   info - The import of 'package:image_picker/image_picker.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter_image_compress/flutter_image_compress.dart' - lib\services\image_upload_service.dart:5:8 - unnecessary_import
+   info - Unnecessary use of double quotes - lib\services\image_upload_service.dart:23:45 - prefer_single_quotes
+   info - Don't invoke 'print' in production code - lib\services\match_service.dart:74:7 - avoid_print
+   info - Unnecessary braces in a string interpolation - lib\services\match_service.dart:101:43 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\services\match_service.dart:102:45 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\services\match_service.dart:123:24 - unnecessary_brace_in_string_interps
+   info - Unnecessary braces in a string interpolation - lib\services\match_service.dart:124:26 - unnecessary_brace_in_string_interps
+   info - Unnecessary cast - lib\services\notification_service.dart:24:65 - unnecessary_cast
+   info - Don't invoke 'print' in production code - lib\services\notification_service.dart:67:7 - avoid_print
+   info - Unnecessary use of double quotes - lib\services\push_notification_service.dart:82:14 - prefer_single_quotes
+warning - The value of the field '_userService' isn't used - lib\services\screenshot_detection_service.dart:15:21 - unused_field
+   info - Unnecessary use of double quotes - lib\services\screenshot_detection_service.dart:65:9 - prefer_single_quotes
+   info - Don't invoke 'print' in production code - lib\services\user_service.dart:29:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\user_service.dart:42:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\user_service.dart:53:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\user_service.dart:66:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\vault_sharing_service.dart:45:7 - avoid_print
+warning - Unused import: 'app_icons.dart' - lib\theme\app_theme.dart:3:8 - unused_import
+   info - Convert 'key' to a super parameter - lib\widgets\dashboard_header.dart:12:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - lib\widgets\dashboard_header.dart:141:25 - prefer_const_constructors
+   info - Convert 'key' to a super parameter - lib\widgets\floating_notification_bar.dart:15:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\widgets\milap_plus_swipe_card.dart:17:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\widgets\navigation.dart:12:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\widgets\notification_tile.dart:9:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\widgets\status_story_rail.dart:14:9 - use_super_parameters
+   info - Unnecessary use of 'toList' in a spread - lib\widgets\status_story_rail.dart:74:16 - unnecessary_to_list_in_spreads
+   info - Convert 'key' to a super parameter - lib\widgets\status_viewer.dart:11:9 - use_super_parameters
+   info - Convert 'key' to a super parameter - lib\widgets\swipe_card.dart:17:9 - use_super_parameters
+   info - Use 'const' with the constructor to improve performance - test\widget_test.dart:16:30 - prefer_const_constructors
+
+flutter : 243 issues found. (ran in 53.7s)
+At line:1 char:1
++ flutter analyze > full_analysis.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (243 issues found. (ran in 53.7s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

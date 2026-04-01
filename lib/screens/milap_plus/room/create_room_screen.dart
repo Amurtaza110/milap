@@ -41,20 +41,28 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       setState(() => _isSaving = true);
 
       try {
-        final docRef = await _roomService.createRoom(
-          _nameController.text.trim(),
-          _descriptionController.text.trim(),
-          user.id,
-          user.photos.isNotEmpty ? user.photos[0] : null,
-        );
+        final String roomId = FirebaseFirestore.instance.collection('rooms').doc().id;
+        
         final newRoom = Room(
-          id: docRef.id,
+          id: roomId,
           name: _nameController.text.trim(),
           description: _descriptionController.text.trim(),
           creatorId: user.id,
           members: [user.id],
+          participants: [
+            RoomParticipant(
+              userId: user.id,
+              name: user.name,
+              avatar: user.photos.isNotEmpty ? user.photos[0] : '',
+              joinedAt: DateTime.now(),
+              isModerator: true,
+            ),
+          ],
           createdAt: Timestamp.now(),
+          imageUrl: user.photos.isNotEmpty ? user.photos[0] : null,
         );
+
+        await _roomService.createRoom(newRoom);
         widget.onCreate(newRoom);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

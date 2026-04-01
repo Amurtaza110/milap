@@ -13,6 +13,7 @@ class AppConfigService {
     'Islamabad',
     'Rawalpindi',
     'Faisalabad',
+    'Hyderabad'
     'Multan',
     'Peshawar',
     'Quetta',

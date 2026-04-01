@@ -12,10 +12,10 @@ class HeartStoreScreen extends StatefulWidget {
   final VoidCallback onUpgradeToGold;
 
   const HeartStoreScreen({
-    Key? key,
+    super.key,
     required this.onBack,
     required this.onUpgradeToGold,
-  }) : super(key: key);
+  });
 
   @override
   State<HeartStoreScreen> createState() => _HeartStoreScreenState();
@@ -25,6 +25,7 @@ class _HeartStoreScreenState extends State<HeartStoreScreen> {
   bool _adLoading = false;
 
   void _handleWatchAd(UserProvider provider) async {
+    if (!mounted) return;
     setState(() => _adLoading = true);
     // Simulate Ad playback
     await Future.delayed(const Duration(seconds: 3));
@@ -53,19 +54,18 @@ class _HeartStoreScreenState extends State<HeartStoreScreen> {
           },
           onBack: () => Navigator.pop(context),
           onPaymentSuccess: (method) async {
+            if (!mounted) return;
             Navigator.pop(context); // Close checkout
             
             final success = await provider.processHeartPurchase(package, method);
             
-            if (success) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('✓ ${package.hearts} Hearts added via $method!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
+            if (success && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('✓ ${package.hearts} Hearts added via $method!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
             }
           },
         ),

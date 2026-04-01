@@ -11,7 +11,7 @@ import '../../theme/app_colors.dart';
 class VerificationScreen extends StatefulWidget {
   final VoidCallback onBack;
 
-  const VerificationScreen({Key? key, required this.onBack}) : super(key: key);
+  const VerificationScreen({super.key, required this.onBack});
 
   @override
   State<VerificationScreen> createState() => _VerificationScreenState();
@@ -28,7 +28,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Future<void> _pickImage(Function(XFile) onSelect) async {
     final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70);
     if (image != null) {
-      setState(() => onSelect(image));
+      if (mounted) setState(() => onSelect(image));
     }
   }
 
@@ -39,7 +39,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
 
     setState(() => _isSubmitting = true);
-    final user = Provider.of<UserProvider>(context, listen: false).user!;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user!;
 
     try {
       // 1. Upload images to Firebase Storage
@@ -71,7 +72,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
         widget.onBack();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submission failed: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submission failed: $e')));
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

@@ -11,11 +11,11 @@ class WalletScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const WalletScreen({
-    Key? key,
+    super.key,
     required this.user,
     required this.onUpdateUser,
     required this.onBack,
-  }) : super(key: key);
+  });
 
   @override
   State<WalletScreen> createState() => _WalletScreenState();
@@ -88,7 +88,7 @@ class _WalletScreenState extends State<WalletScreen> {
           // Header
           Container(
             padding: const EdgeInsets.fromLTRB(32, 64, 32, 24),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
                 color: AppColors.surface,
                 border:
                     Border(bottom: BorderSide(color: AppColors.background))),
@@ -103,7 +103,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         decoration: BoxDecoration(
                             color: AppColors.background,
                             borderRadius: BorderRadius.circular(16)),
-                        child: Icon(AppIcons.back,
+                        child: const Icon(AppIcons.back,
                             size: 18, color: AppColors.textMain))),
                 const SizedBox(width: 16),
                 Expanded(
@@ -151,9 +151,9 @@ class _WalletScreenState extends State<WalletScreen> {
                       },
                       icon: Container(
                           padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                               color: AppColors.primary, shape: BoxShape.circle),
-                          child: Icon(AppIcons.add,
+                          child: const Icon(AppIcons.add,
                               color: Colors.white, size: 20))),
               ],
             ),
@@ -183,7 +183,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       decoration: BoxDecoration(
                           color: AppColors.background,
                           borderRadius: BorderRadius.circular(16)),
-                      child: Icon(AppIcons.back,
+                      child: const Icon(AppIcons.back,
                           size: 18, color: AppColors.textMain)))),
           Center(
             child: Padding(
@@ -203,7 +203,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                 blurRadius: 20)
                           ]),
                       child:
-                          Icon(AppIcons.lock, color: Colors.white, size: 32)),
+                          const Icon(AppIcons.lock, color: Colors.white, size: 32)),
                   const SizedBox(height: 32),
                   Text(
                       widget.user.vaultPin == null
@@ -257,15 +257,17 @@ class _WalletScreenState extends State<WalletScreen> {
           crossAxisCount: 3, crossAxisSpacing: 24, mainAxisSpacing: 24),
       itemCount: 12,
       itemBuilder: (context, index) {
-        if (index == 9)
+        if (index == 9) {
           return IconButton(
               onPressed: () => setState(() => _pinEntry = ''),
-              icon: Icon(AppIcons.close, color: AppColors.error));
+              icon: const Icon(AppIcons.close, color: AppColors.error));
+        }
         if (index == 10) return _buildNumButton('0');
-        if (index == 11)
+        if (index == 11) {
           return IconButton(
               onPressed: widget.onBack,
-              icon: Icon(AppIcons.back, color: AppColors.textExtraLight));
+              icon: const Icon(AppIcons.back, color: AppColors.textExtraLight));
+        }
         return _buildNumButton((index + 1).toString());
       },
     );
@@ -448,6 +450,7 @@ class _WalletScreenState extends State<WalletScreen> {
               final recipientId = _shareController.text.trim();
               if (recipientId.isEmpty) return;
 
+              if (!mounted) return;
               Navigator.pop(context);
               _shareController.clear();
 
@@ -465,15 +468,13 @@ class _WalletScreenState extends State<WalletScreen> {
                   senderName: widget.user.name,
                 );
 
-                if (success) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                            Text('Asset shared with screenshot protection'),
-                      ),
-                    );
-                  }
+                if (success && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('Asset shared with screenshot protection'),
+                    ),
+                  );
                 }
               } catch (e) {
                 if (mounted) {

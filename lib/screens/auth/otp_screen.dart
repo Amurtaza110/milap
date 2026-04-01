@@ -5,7 +5,6 @@ import '../../providers/user_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_button_styles.dart';
-import '../../services/auth_service.dart';
 
 class OTPScreen extends StatefulWidget {
   final String phoneNumber;
@@ -13,11 +12,11 @@ class OTPScreen extends StatefulWidget {
   final VoidCallback onBack;
 
   const OTPScreen({
-    Key? key,
+    super.key,
     required this.phoneNumber,
     required this.onVerify,
     required this.onBack,
-  }) : super(key: key);
+  });
 
   @override
   State<OTPScreen> createState() => _OTPScreenState();
@@ -39,7 +38,7 @@ class _OTPScreenState extends State<OTPScreen> {
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timerValue > 0) {
-        setState(() => _timerValue--);
+        if (mounted) setState(() => _timerValue--);
       } else {
         _timer?.cancel();
       }
@@ -80,6 +79,8 @@ class _OTPScreenState extends State<OTPScreen> {
     try {
       final AuthResult result = await userProvider.verifyOTP(otp);
 
+      if (!mounted) return;
+
       if (result.user != null) {
         widget.onVerify(true);
       } else {
@@ -90,6 +91,7 @@ class _OTPScreenState extends State<OTPScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Error: ${e.toString()}'),

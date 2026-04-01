@@ -30,10 +30,12 @@ class MockDataService {
 
   static final List<UserProfile> mockProfiles = [
     UserProfile(
+      country: 'Pakistan',
       id: '1',
       name: 'Sarah',
       age: 25,
       gender: Gender.Female,
+      dob: '1998-05-15',
       location: 'New York',
       bio: 'Love to travel and try new things.',
       interests: ['travel', 'food', 'movies'],
@@ -46,13 +48,15 @@ class MockDataService {
       lookingForDates: true,
       isDeactivated: false,
       heartsBalance: 100,
-      lastHeartRefill: DateTime.now().toIso8601String(), dob: '',
+      lastHeartRefill: DateTime.now().toIso8601String(),
     ),
     UserProfile(
       id: '2',
       name: 'John',
       age: 28,
       gender: Gender.Male,
+      dob: '1995-10-20',
+      country: 'United States',
       location: 'San Francisco',
       bio: 'Software engineer and avid hiker.',
       interests: ['hiking', 'coding', 'music'],
@@ -65,7 +69,7 @@ class MockDataService {
       lookingForDates: true,
       isDeactivated: false,
       heartsBalance: 100,
-      lastHeartRefill: DateTime.now().toIso8601String(), dob: '',
+      lastHeartRefill: DateTime.now().toIso8601String(),
     ),
   ];
 }
